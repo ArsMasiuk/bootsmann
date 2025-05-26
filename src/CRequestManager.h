@@ -14,6 +14,10 @@ public:
 
     int SendRequest(const QByteArray& verb, const QUrl& url, const QByteArray& payload = "");
 
+Q_SIGNALS:
+    void RequestSuccess(int reqId, int code, const QByteArray& result);
+    void RequestError(int reqId, QNetworkReply::NetworkError code, const QString& errorMsg);
+
 protected:
     int DoProcessReply(QNetworkReply* reply);
 

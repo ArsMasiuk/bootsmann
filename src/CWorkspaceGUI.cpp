@@ -29,7 +29,7 @@ CWorkspaceGUI::CWorkspaceGUI(CRequestManager& reqMgr, QWidget *parent)
     auto addButton = new QToolButton(this);
     addButton->setText("*");
     addButton->setToolTip(tr("Create new request"));
-    addButton->setShortcut(Qt::CTRL + Qt::Key_N);
+    addButton->setShortcut(Qt::CTRL | Qt::Key_N);
 
     connect(addButton, &QToolButton::clicked, this, [=](){
         AddRequestTab();

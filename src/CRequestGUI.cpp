@@ -10,6 +10,11 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     , ui(new Ui::CRequestGUI)
 {
     ui->setupUi(this);
+
+    connect(&m_reqMgr, &CRequestManager::RequestSuccess,
+		this, &CRequestGUI::onRequestFinished);
+	connect(&m_reqMgr, &CRequestManager::RequestError,
+        this, &CRequestGUI::onRequestError);
 }
 
 CRequestGUI::~CRequestGUI()
@@ -21,6 +26,30 @@ CRequestGUI::~CRequestGUI()
 void CRequestGUI::Init()
 {
     ui->RequestURL->setFocus(Qt::OtherFocusReason);
+}
+
+
+void CRequestGUI::onRequestFinished(int reqId, int code, const QByteArray& result)
+{
+    ui->OutputText->clear();
+
+    ui->OutputText->appendPlainText(tr("Code: %1").arg(code));
+
+    if (!result.isEmpty()) {
+        ui->OutputText->appendPlainText(result);
+    }
+}
+
+
+void CRequestGUI::onRequestError(int reqId, QNetworkReply::NetworkError code, const QString& errorMsg)
+{
+    ui->OutputText->clear();
+
+    ui->OutputText->appendPlainText(tr("Error: %1").arg((int) code));
+
+    if (!errorMsg.isEmpty()) {
+        ui->OutputText->appendPlainText(errorMsg);
+    }
 }
 
 

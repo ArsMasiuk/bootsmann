@@ -60,11 +60,23 @@ int CRequestManager::DoProcessReply(QNetworkReply* reply)
 
 void CRequestManager::OnRequestSuccess()
 {
+	auto reply = qobject_cast<QNetworkReply*>(sender());
+    reply->deleteLater(); // delete reply object after processing
 
+	auto data = reply->readAll();
+
+    auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    
+    // emit signal with data and status code
+	Q_EMIT RequestSuccess((quintptr)reply, statusCode, data);
 }
 
 
 void CRequestManager::OnRequestError(QNetworkReply::NetworkError code)
 {
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+    reply->deleteLater(); // delete reply object after processing
 
+    // emit signal with error status code
+    Q_EMIT RequestError((quintptr)reply, code, "");
 }
