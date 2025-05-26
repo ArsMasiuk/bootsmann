@@ -12,18 +12,14 @@ class CRequestManager : public QObject
 public:
     explicit CRequestManager(QObject *parent = nullptr);
 
-    int SendRequest(const QByteArray& verb, const QUrl& url, const QByteArray& payload = "");
+    QNetworkReply* SendRequest(QObject* handler, const QByteArray& verb, const QUrl& url, const QByteArray& payload = "");
 
 Q_SIGNALS:
-    void RequestSuccess(int reqId, int code, const QByteArray& result);
-    void RequestError(int reqId, QNetworkReply::NetworkError code, const QString& errorMsg);
+    void RequestSuccess(QNetworkReply* reply, int code, const QString& errorMsg);
+    void RequestError(QNetworkReply* reply, int code, const QString& errorMsg);
 
 protected:
-    int DoProcessReply(QNetworkReply* reply);
-
-private Q_SLOTS:
-    void OnRequestSuccess();
-    void OnRequestError(QNetworkReply::NetworkError code);
+    QNetworkReply* DoProcessReply(QObject* handler, QNetworkReply* reply);
 
 private:
     QNetworkAccessManager m_manager;

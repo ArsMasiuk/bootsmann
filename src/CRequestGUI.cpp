@@ -10,12 +10,8 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     , ui(new Ui::CRequestGUI)
 {
     ui->setupUi(this);
-
-    connect(&m_reqMgr, &CRequestManager::RequestSuccess,
-		this, &CRequestGUI::onRequestFinished);
-	connect(&m_reqMgr, &CRequestManager::RequestError,
-        this, &CRequestGUI::onRequestError);
 }
+
 
 CRequestGUI::~CRequestGUI()
 {
@@ -29,27 +25,45 @@ void CRequestGUI::Init()
 }
 
 
-void CRequestGUI::onRequestFinished(int reqId, int code, const QByteArray& result)
+void CRequestGUI::OnRequestSuccess()
 {
-    ui->OutputText->clear();
+    auto reply = qobject_cast<QNetworkReply*>(sender());
 
-    ui->OutputText->appendPlainText(tr("Code: %1").arg(code));
+    auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+    auto statusText = statusCode == 200 ? "OK" : reply->errorString();
+
+	auto result = reply->readAll();
+
+    ui->ResultCode->setText(
+        tr("DONE. Code: %1 [%2]").arg(statusCode).arg(statusText));
+
+    ui->OutputText->clear();
 
     if (!result.isEmpty()) {
         ui->OutputText->appendPlainText(result);
     }
+
+    reply->deleteLater(); // delete reply object after processing
 }
 
 
-void CRequestGUI::onRequestError(int reqId, QNetworkReply::NetworkError code, const QString& errorMsg)
+void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 {
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+
+    auto statusText = reply->errorString();
+
+    ui->ResultCode->setText(
+        tr("FAILED. Code: %1").arg((int)code));
+
     ui->OutputText->clear();
 
-    ui->OutputText->appendPlainText(tr("Error: %1").arg((int) code));
-
-    if (!errorMsg.isEmpty()) {
-        ui->OutputText->appendPlainText(errorMsg);
+    if (!statusText.isEmpty()) {
+        ui->OutputText->appendPlainText(statusText);
     }
+
+    reply->deleteLater(); // delete reply object after processing
 }
 
 
@@ -59,6 +73,7 @@ void CRequestGUI::on_Run_clicked()
 
     QString request = ui->RequestURL->text();
     if (request.isEmpty()){
+        ui->ResultCode->setText(tr("ERROR"));
         ui->OutputText->appendPlainText(tr("Request is empty"));
         return;
     }
@@ -67,5 +82,13 @@ void CRequestGUI::on_Run_clicked()
 
     QString payload = ui->InputText->toPlainText();
 
-    m_reqMgr.SendRequest(verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit());
+    auto reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit());
+
+    if (reply == nullptr) {
+        ui->ResultCode->setText(tr("ERROR"));
+        ui->OutputText->appendPlainText(tr("Request could not be processed"));
+        return;
+    }
+
+    ui->ResultCode->setText(tr("IN PROGRESS..."));
 }
