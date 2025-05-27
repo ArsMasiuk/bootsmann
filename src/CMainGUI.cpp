@@ -21,7 +21,8 @@ CMainGUI::CMainGUI(QWidget *parent)
         "}");
 
     // init
-    setWindowTitle("The Bootsmann 1.0");
+	qApp->setApplicationDisplayName(qApp->applicationName() + " " + qApp->applicationVersion());
+    setWindowTitle(qApp->applicationDisplayName());
 
     // add defautl request manager
     auto reqMgr = new CRequestManager(this);

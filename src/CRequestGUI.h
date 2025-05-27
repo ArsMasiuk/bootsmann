@@ -20,6 +20,9 @@ public:
 
     void Init();
 
+Q_SIGNALS:
+    void RequestTitleChanged(const QString& title);
+
 public Q_SLOTS:
     void OnRequestSuccess();
 	void OnRequestError(QNetworkReply::NetworkError code);

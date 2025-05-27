@@ -44,6 +44,7 @@ CWorkspaceGUI::CWorkspaceGUI(CRequestManager& reqMgr, QWidget *parent)
     AddRequestTab();
 }
 
+
 CWorkspaceGUI::~CWorkspaceGUI()
 {
     delete ui;
@@ -56,6 +57,17 @@ int CWorkspaceGUI::AddRequestTab()
     int index = ui->Tabs->addTab(requestUI, tr("New Request"));
     ui->Tabs->setCurrentIndex(index);
     requestUI->Init();
+
+    connect(requestUI, &CRequestGUI::RequestTitleChanged, this, [=](const QString& title){
+		ui->Tabs->setTabToolTip(index, title);
+
+        // truncate long titles
+        if (title.size() > 20)
+            ui->Tabs->setTabText(index, title.left(20) + "..."); 
+        else
+		    ui->Tabs->setTabText(index, title);
+	});
+
     return index;
 }
 

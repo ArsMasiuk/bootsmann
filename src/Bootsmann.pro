@@ -17,3 +17,13 @@ FORMS += $$files(*.ui)
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32{
+	VERSION = 0.1.0.0
+	RC_ICONS = $$PWD/../win32/icon.ico
+	QMAKE_TARGET_COPYRIGHT = (C) 2025 Ars L. Masiuk
+	QMAKE_TARGET_DESCRIPTION = Minimalistic native remote API testing application
+	QMAKE_TARGET_PRODUCT = The Bootsmann
+	LIBS += -ladvapi32
+}
+

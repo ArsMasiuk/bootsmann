@@ -63,6 +63,26 @@
               <string>HEAD</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>PATCH</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>OPTIONS</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>TRACE</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CONNECT</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>

@@ -72,15 +72,19 @@ void CRequestGUI::on_Run_clicked()
     ui->OutputText->clear();
 
     QString request = ui->RequestURL->text();
+    QString verb = ui->RequestType->currentText();
+    QString payload = ui->InputText->toPlainText();
+
+    // request title
+	QString requestTitle = verb + " " + request;
+	Q_EMIT RequestTitleChanged(requestTitle);
+
+
     if (request.isEmpty()){
         ui->ResultCode->setText(tr("ERROR"));
         ui->OutputText->appendPlainText(tr("Request is empty"));
         return;
     }
-
-    QString verb = ui->RequestType->currentText();
-
-    QString payload = ui->InputText->toPlainText();
 
     auto reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit());
 
