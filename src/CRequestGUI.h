@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QNetworkReply>
+#include <QElapsedTimer>
 
 namespace Ui {
 class CRequestGUI;
@@ -34,6 +35,7 @@ private:
     Ui::CRequestGUI *ui;
 
     CRequestManager& m_reqMgr;
+	QElapsedTimer m_timer;
 };
 
 #endif // CREQUESTGUI_H

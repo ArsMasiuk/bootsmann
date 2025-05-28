@@ -16,7 +16,7 @@ CMainGUI::CMainGUI(QWidget *parent)
     // style
     setStyleSheet(
         "QWidget {"
-            "font-family: Barlow;"
+            "font-family: Verdana;"
             "font-size: 10pt;"
         "}");
 

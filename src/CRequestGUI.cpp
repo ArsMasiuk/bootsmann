@@ -27,16 +27,31 @@ void CRequestGUI::Init()
 
 void CRequestGUI::OnRequestSuccess()
 {
+    auto ms = m_timer.elapsed();
+	ui->TimeLabel->setText(tr("%1 ms").arg(ms));
+
     auto reply = qobject_cast<QNetworkReply*>(sender());
 
     auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
-    auto statusText = statusCode == 200 ? "OK" : reply->errorString();
+    auto statusText = tr("DONE. Code: %1").arg(statusCode);
+    if (statusCode == 200)
+        statusText += " [OK]";
+    else
+    if (statusReason.isEmpty() && reply->errorString().isEmpty()) {
+    }
+    else {
+        statusText += " [";
+        if (statusReason.size())
+            statusText += statusReason;
+        if (reply->errorString().size())
+            statusText += " " + reply->errorString();
+        statusText += "]";
+    }
+    ui->ResultCode->setText(statusText);
 
 	auto result = reply->readAll();
-
-    ui->ResultCode->setText(
-        tr("DONE. Code: %1 [%2]").arg(statusCode).arg(statusText));
 
     ui->OutputText->clear();
 
@@ -50,17 +65,29 @@ void CRequestGUI::OnRequestSuccess()
 
 void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 {
+    auto ms = m_timer.elapsed();
+    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
+
     auto reply = qobject_cast<QNetworkReply*>(sender());
 
-    auto statusText = reply->errorString();
+    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
-    ui->ResultCode->setText(
-        tr("FAILED. Code: %1").arg((int)code));
+	QString statusText = tr("FAILED. Code: %1").arg((int)code);
+    if (statusReason.size())
+		statusText += tr(" [%1]").arg(statusReason);
+
+	ui->ResultCode->setText(statusText);
 
     ui->OutputText->clear();
 
-    if (!statusText.isEmpty()) {
-        ui->OutputText->appendPlainText(statusText);
+    auto errorText = reply->errorString();
+    if (!errorText.isEmpty()) {
+        ui->OutputText->appendPlainText(errorText);
+    }
+
+    auto result = reply->readAll();
+    if (!result.isEmpty()) {
+        ui->OutputText->appendPlainText(result);
     }
 
     reply->deleteLater(); // delete reply object after processing
@@ -70,6 +97,7 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 void CRequestGUI::on_Run_clicked()
 {
     ui->OutputText->clear();
+    ui->TimeLabel->clear();
 
     QString request = ui->RequestURL->text();
     QString verb = ui->RequestType->currentText();
@@ -87,6 +115,8 @@ void CRequestGUI::on_Run_clicked()
     }
 
     auto reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit());
+
+    m_timer.start();
 
     if (reply == nullptr) {
         ui->ResultCode->setText(tr("ERROR"));
