@@ -11,7 +11,9 @@ QNetworkReply* CRequestManager::SendRequest(QObject* handler, const QByteArray& 
 {
     QNetworkRequest request;
     request.setUrl(url);
-    request.setRawHeader("User-Agent", "Bootsmann 1.0");
+    //request.setRawHeader("User-Agent", "Bootsmann 1.0");
+    request.setHeader(QNetworkRequest::UserAgentHeader, "Bootsmann 1.0");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     if (verb == "GET"){
         auto reply = m_manager.get(request);

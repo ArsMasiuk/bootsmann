@@ -17,6 +17,8 @@ public:
     explicit CWorkspaceGUI(CRequestManager& reqMgr, QWidget *parent = nullptr);
     ~CWorkspaceGUI();
 
+	int CreateNewRequest() { return AddRequestTab(); }
+
 protected:
     int AddRequestTab();
 

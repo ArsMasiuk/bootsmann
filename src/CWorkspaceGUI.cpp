@@ -27,8 +27,9 @@ CWorkspaceGUI::CWorkspaceGUI(CRequestManager& reqMgr, QWidget *parent)
 
     // add tool button
     auto addButton = new QToolButton(this);
-    addButton->setText("*");
-    addButton->setToolTip(tr("Create new request"));
+	addButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    addButton->setToolTip(tr("Create new HTTP request"));
+    addButton->setIcon(QIcon(":/Icons/HTTP"));
     addButton->setShortcut(Qt::CTRL | Qt::Key_N);
 
     connect(addButton, &QToolButton::clicked, this, [=](){

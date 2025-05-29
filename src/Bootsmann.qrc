@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/Icons">
+    <file alias="HTTP">./Icons/HTTP_logo.svg</file>
+    <file alias="CPP">./Icons/CPP_logo.svg</file>
+  </qresource>
+</RCC>

@@ -10,6 +10,14 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     , ui(new Ui::CRequestGUI)
 {
     ui->setupUi(this);
+
+    ui->splitter->setSizes(QList<int>({ INT_MAX, INT_MAX }));
+
+    ui->RequestHeaders->setRowCount(0);
+    ui->RequestHeaders->setColumnCount(2);
+    ui->RequestHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
+
+    ui->RequestTabs->setCurrentIndex(0);
 }
 
 
@@ -21,9 +29,9 @@ CRequestGUI::~CRequestGUI()
 
 void CRequestGUI::Init()
 {
-    ui->RequestURL->setFocus(Qt::OtherFocusReason);
+    ClearResult();
 
-	ClearResult();
+    ui->RequestURL->setFocus(Qt::OtherFocusReason);
 }
 
 
