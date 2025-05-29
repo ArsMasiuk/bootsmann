@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QNetworkReply>
+#include <QNetworkCacheMetaData>
 #include <QElapsedTimer>
 
 namespace Ui {
@@ -30,8 +31,16 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void on_Run_clicked();
+	void on_AddHeader_clicked();
+    void on_RemoveHeader_clicked();
+	void on_ClearHeaders_clicked();
 
 private:
+    void SetDefaultHeaders();
+	void AddRequestHeader(const QString& name, const QString& value);
+	void AddRequestHeader(QNetworkRequest::KnownHeaders type, const QString& value);
+    QNetworkCacheMetaData::RawHeaderList GetRequestHeaders() const;
+
     void LockRequest();
 	void UnlockRequest();
 	void ClearResult();

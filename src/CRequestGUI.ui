@@ -119,7 +119,7 @@
        <item>
         <widget class="QTabWidget" name="RequestTabs">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="RequestBodyTab">
           <attribute name="title">
@@ -130,6 +130,9 @@
             <widget class="QPlainTextEdit" name="RequestBody">
              <property name="readOnly">
               <bool>false</bool>
+             </property>
+             <property name="placeholderText">
+              <string>&lt;Write request body here&gt;</string>
              </property>
             </widget>
            </item>
@@ -143,7 +146,7 @@
            <item>
             <widget class="QTableWidget" name="RequestHeaders">
              <property name="editTriggers">
-              <set>QAbstractItemView::NoEditTriggers</set>
+              <set>QAbstractItemView::AllEditTriggers</set>
              </property>
              <property name="showDropIndicator" stdset="0">
               <bool>false</bool>
@@ -173,13 +176,56 @@
              <column/>
             </widget>
            </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="AddHeader">
+               <property name="text">
+                <string>Add</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="RemoveHeader">
+               <property name="text">
+                <string>Remove</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="ClearHeaders">
+               <property name="text">
+                <string>Clear All</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
           </layout>
+         </widget>
+         <widget class="QWidget" name="RequestParamsTab">
+          <attribute name="title">
+           <string>Parameters</string>
+          </attribute>
          </widget>
         </widget>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
         <widget class="QGroupBox" name="OutputGB">
@@ -296,6 +342,20 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>RequestType</tabstop>
+  <tabstop>RequestURL</tabstop>
+  <tabstop>Run</tabstop>
+  <tabstop>RequestTabs</tabstop>
+  <tabstop>ResultTabs</tabstop>
+  <tabstop>RequestHeaders</tabstop>
+  <tabstop>ResponseBody</tabstop>
+  <tabstop>AddHeader</tabstop>
+  <tabstop>RemoveHeader</tabstop>
+  <tabstop>ClearHeaders</tabstop>
+  <tabstop>ResponseHeaders</tabstop>
+  <tabstop>RequestBody</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

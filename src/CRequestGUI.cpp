@@ -3,6 +3,8 @@
 
 #include "CRequestManager.h"
 
+#include <QMessageBox>
+
 
 CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     : QWidget(parent)
@@ -16,6 +18,7 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     ui->RequestHeaders->setRowCount(0);
     ui->RequestHeaders->setColumnCount(2);
     ui->RequestHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
+	SetDefaultHeaders();
 
     ui->RequestTabs->setCurrentIndex(0);
 }
@@ -117,13 +120,130 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 }
 
 
+void CRequestGUI::on_AddHeader_clicked()
+{
+	AddRequestHeader("<New Header>", "");
+}
+
+
+void CRequestGUI::on_RemoveHeader_clicked()
+{
+	auto asked = QMessageBox::question(this, tr("Remove Header"), 
+        tr("Are you sure you want to remove the selected header?"), 
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (asked != QMessageBox::Yes) {
+        return; // User chose not to remove the header
+	}
+
+    // Remove the currently selected row from the RequestHeaders table
+    auto currentRow = ui->RequestHeaders->currentRow();
+    if (currentRow >= 0) {
+        ui->RequestHeaders->removeRow(currentRow);
+        if (currentRow < ui->RequestHeaders->rowCount()) {
+            ui->RequestHeaders->setCurrentCell(currentRow, 0);
+        }
+    } else {
+        // No row selected, do nothing or show a message
+	}
+}
+
+
+void CRequestGUI::on_ClearHeaders_clicked()
+{
+    auto asked = QMessageBox::question(this, tr("Clear Headers"), 
+        tr("Are you sure you want to clear all request headers?"), 
+		QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (asked != QMessageBox::Yes) {
+        return; // User chose not to clear headers
+    }
+
+	//while (ui->RequestHeaders->rowCount() > 0)
+ //       ui->RequestHeaders->removeRow(0);
+	ui->RequestHeaders->setRowCount(0);
+    SetDefaultHeaders();
+	ui->RequestHeaders->setCurrentCell(0, 0); // Set focus to the first cell
+}
+
+
+void CRequestGUI::SetDefaultHeaders()
+{
+    AddRequestHeader(QNetworkRequest::UserAgentHeader, qApp->applicationDisplayName());
+    AddRequestHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+}
+
+
+void CRequestGUI::AddRequestHeader(const QString& name, const QString& value)
+{
+	// check if header already exists
+    for (int i = 0; i < ui->RequestHeaders->rowCount(); ++i) {
+        if (ui->RequestHeaders->item(i, 0)->text() == name) {
+            ui->RequestHeaders->item(i, 1)->setText(value);
+			ui->RequestHeaders->setCurrentCell(i, 0);
+            return;
+        }
+    }
+
+    // add new header
+    int row = ui->RequestHeaders->rowCount();
+    ui->RequestHeaders->insertRow(row);
+    ui->RequestHeaders->setItem(row, 0, new QTableWidgetItem(name));
+	ui->RequestHeaders->setItem(row, 1, new QTableWidgetItem(value));
+    ui->RequestHeaders->setCurrentCell(row, 0);
+}
+
+
+void CRequestGUI::AddRequestHeader(QNetworkRequest::KnownHeaders type, const QString& value)
+{
+	QNetworkRequest tempRequest;
+    tempRequest.setHeader(type, value);
+    QString headerName = tempRequest.rawHeaderList().first();
+    AddRequestHeader(headerName, value);
+}
+
+
+QNetworkCacheMetaData::RawHeaderList CRequestGUI::GetRequestHeaders() const
+{
+    QNetworkCacheMetaData::RawHeaderList headers;
+
+    for (int i = 0; i < ui->RequestHeaders->rowCount(); ++i) {
+        auto nameItem = ui->RequestHeaders->item(i, 0);
+        auto valueItem = ui->RequestHeaders->item(i, 1);
+        if (nameItem && valueItem) {
+            QString name = nameItem->text().trimmed();
+            QString value = valueItem->text().trimmed();
+            if (!name.isEmpty()) {
+                headers.append({ name.toUtf8(), value.toUtf8() });
+            }
+        }
+	}
+
+    return headers;
+}
+
+
 void CRequestGUI::LockRequest()
 {
+    ui->Run->setEnabled(false);
+    ui->RequestURL->setEnabled(false);
+    ui->RequestType->setEnabled(false);
+    ui->RequestBody->setEnabled(false);
+    ui->RequestHeaders->setEnabled(false);
+    ui->AddHeader->setEnabled(false);
+    ui->RemoveHeader->setEnabled(false);
+    ui->ClearHeaders->setEnabled(false);
 }
 
 
 void CRequestGUI::UnlockRequest()
 {
+    ui->Run->setEnabled(true);
+    ui->RequestURL->setEnabled(true);
+    ui->RequestType->setEnabled(true);
+    ui->RequestBody->setEnabled(true);
+    ui->RequestHeaders->setEnabled(true);
+    ui->AddHeader->setEnabled(true);
+    ui->RemoveHeader->setEnabled(true);
+	ui->ClearHeaders->setEnabled(true);
 }
 
 
@@ -159,7 +279,7 @@ void CRequestGUI::on_Run_clicked()
         return;
     }
 
-    auto reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit());
+    auto reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit(), GetRequestHeaders());
 
     m_timer.start();
 

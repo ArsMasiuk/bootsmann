@@ -7,13 +7,18 @@ CRequestManager::CRequestManager(QObject *parent)
 }
 
 
-QNetworkReply* CRequestManager::SendRequest(QObject* handler, const QByteArray& verb, const QUrl& url, const QByteArray& payload)
+QNetworkReply* CRequestManager::SendRequest(QObject* handler, const QByteArray& verb, const QUrl& url, const QByteArray& payload,
+    QNetworkCacheMetaData::RawHeaderList headers)
 {
     QNetworkRequest request;
     request.setUrl(url);
+
+    for (const auto& header : headers) {
+        request.setRawHeader(header.first, header.second);
+	}
     //request.setRawHeader("User-Agent", "Bootsmann 1.0");
-    request.setHeader(QNetworkRequest::UserAgentHeader, "Bootsmann 1.0");
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    //request.setHeader(QNetworkRequest::UserAgentHeader, "Bootsmann 1.0");
+    //request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     if (verb == "GET"){
         auto reply = m_manager.get(request);
