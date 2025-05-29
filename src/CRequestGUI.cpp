@@ -22,6 +22,8 @@ CRequestGUI::~CRequestGUI()
 void CRequestGUI::Init()
 {
     ui->RequestURL->setFocus(Qt::OtherFocusReason);
+
+	ClearResult();
 }
 
 
@@ -30,8 +32,12 @@ void CRequestGUI::OnRequestSuccess()
     auto ms = m_timer.elapsed();
 	ui->TimeLabel->setText(tr("%1 ms").arg(ms));
 
-    auto reply = qobject_cast<QNetworkReply*>(sender());
+    UnlockRequest();
 
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+    reply->deleteLater(); // delete reply object after processing
+
+    // update status
     auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
@@ -51,15 +57,24 @@ void CRequestGUI::OnRequestSuccess()
     }
     ui->ResultCode->setText(statusText);
 
+    // update body
 	auto result = reply->readAll();
-
-    ui->OutputText->clear();
-
     if (!result.isEmpty()) {
-        ui->OutputText->appendPlainText(result);
+        ui->ResponseBody->appendPlainText(result);
     }
 
-    reply->deleteLater(); // delete reply object after processing
+	// update headers
+    const auto &headers = reply->rawHeaderPairs();
+	ui->ResponseHeaders->setRowCount(headers.size());
+
+    int r = 0;
+    for (const auto& header : headers) {
+		auto &key = header.first;
+        auto &value = header.second;
+		ui->ResponseHeaders->setItem(r, 0, new QTableWidgetItem(key));
+        ui->ResponseHeaders->setItem(r, 1, new QTableWidgetItem(value));
+        r++;
+    }
 }
 
 
@@ -68,8 +83,12 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
     auto ms = m_timer.elapsed();
     ui->TimeLabel->setText(tr("%1 ms").arg(ms));
 
-    auto reply = qobject_cast<QNetworkReply*>(sender());
+	UnlockRequest();
 
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+    reply->deleteLater(); // delete reply object after processing
+
+    // update status
     auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
 	QString statusText = tr("FAILED. Code: %1").arg((int)code);
@@ -78,30 +97,47 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 
 	ui->ResultCode->setText(statusText);
 
-    ui->OutputText->clear();
-
     auto errorText = reply->errorString();
     if (!errorText.isEmpty()) {
-        ui->OutputText->appendPlainText(errorText);
+        ui->ResponseBody->appendPlainText(errorText);
     }
 
     auto result = reply->readAll();
     if (!result.isEmpty()) {
-        ui->OutputText->appendPlainText(result);
+        ui->ResponseBody->appendPlainText(result);
     }
+}
 
-    reply->deleteLater(); // delete reply object after processing
+
+void CRequestGUI::LockRequest()
+{
+}
+
+
+void CRequestGUI::UnlockRequest()
+{
+}
+
+
+void CRequestGUI::ClearResult()
+{
+    ui->ResponseBody->clear();
+	ui->ResponseHeaders->setRowCount(0);
+    ui->ResponseHeaders->setColumnCount(2);
+    ui->ResponseHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
+    ui->TimeLabel->clear();
+	ui->ResultTabs->setCurrentIndex(0);
 }
 
 
 void CRequestGUI::on_Run_clicked()
 {
-    ui->OutputText->clear();
-    ui->TimeLabel->clear();
+    LockRequest();
+    ClearResult();
 
     QString request = ui->RequestURL->text();
     QString verb = ui->RequestType->currentText();
-    QString payload = ui->InputText->toPlainText();
+    QString payload = ui->RequestBody->toPlainText();
 
     // request title
 	QString requestTitle = verb + " " + request;
@@ -109,8 +145,9 @@ void CRequestGUI::on_Run_clicked()
 
 
     if (request.isEmpty()){
+		UnlockRequest();
         ui->ResultCode->setText(tr("ERROR"));
-        ui->OutputText->appendPlainText(tr("Request is empty"));
+        ui->ResponseBody->appendPlainText(tr("Request is empty"));
         return;
     }
 
@@ -119,8 +156,9 @@ void CRequestGUI::on_Run_clicked()
     m_timer.start();
 
     if (reply == nullptr) {
+        UnlockRequest();
         ui->ResultCode->setText(tr("ERROR"));
-        ui->OutputText->appendPlainText(tr("Request could not be processed"));
+        ui->ResponseBody->appendPlainText(tr("Request could not be processed"));
         return;
     }
 

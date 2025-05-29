@@ -32,6 +32,10 @@ private Q_SLOTS:
     void on_Run_clicked();
 
 private:
+    void LockRequest();
+	void UnlockRequest();
+	void ClearResult();
+
     Ui::CRequestGUI *ui;
 
     CRequestManager& m_reqMgr;
