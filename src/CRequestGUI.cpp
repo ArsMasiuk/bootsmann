@@ -20,6 +20,8 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     ui->RequestHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
 	SetDefaultHeaders();
 
+    ui->RequestParams->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
+
     ui->RequestTabs->setCurrentIndex(0);
 }
 
@@ -150,15 +152,14 @@ void CRequestGUI::on_RemoveHeader_clicked()
 
 void CRequestGUI::on_ClearHeaders_clicked()
 {
-    auto asked = QMessageBox::question(this, tr("Clear Headers"), 
-        tr("Are you sure you want to clear all request headers?"), 
+    auto asked = QMessageBox::question(this, tr("Reset Headers"), 
+        tr("Are you sure you want to reset all request headers to defaults?"), 
 		QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
     if (asked != QMessageBox::Yes) {
         return; // User chose not to clear headers
     }
 
-	//while (ui->RequestHeaders->rowCount() > 0)
- //       ui->RequestHeaders->removeRow(0);
 	ui->RequestHeaders->setRowCount(0);
     SetDefaultHeaders();
 	ui->RequestHeaders->setCurrentCell(0, 0); // Set focus to the first cell
@@ -167,7 +168,7 @@ void CRequestGUI::on_ClearHeaders_clicked()
 
 void CRequestGUI::SetDefaultHeaders()
 {
-    AddRequestHeader(QNetworkRequest::UserAgentHeader, qApp->applicationDisplayName());
+    AddRequestHeader(QNetworkRequest::UserAgentHeader, qApp->applicationName() + " " + qApp->applicationVersion());
     AddRequestHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 }
 

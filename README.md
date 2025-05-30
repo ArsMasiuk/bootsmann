@@ -11,3 +11,12 @@ A minimalistic, multiplatform REST API test application.
 - **Portable**: Can be run directly from the executable without installation, making it portable and easy to use.
 - **Multiplatform**: Runs on various operating systems including Windows, macOS, and Linux - thanks to Qt framework.
 - **Open Source**: Available under the MIT License, allowing for free use, modification, and distribution.
+
+## Support
+
+Since **Bootsmann** is a free software, it is developed in the free time on my own costs only. 
+If you like the software and wish to support its further development, you could make a small donation using the button below:
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Z35EHHJ3729GG&source=url)
+
+Thank you!
