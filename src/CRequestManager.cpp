@@ -1,9 +1,26 @@
 #include "CRequestManager.h"
 
+
+QByteArrayList CRequestManager::s_knownHeaders;
+QMap<QNetworkRequest::KnownHeaders, QByteArray> CRequestManager::s_knownHeaderMap;
+
+
 CRequestManager::CRequestManager(QObject *parent)
     : QObject{parent}
 {
-
+	// initialize known headers
+    if (s_knownHeaders.isEmpty()) {
+        for (int i = 0; i < QNetworkRequest::NumKnownHeaders; ++i) {
+            auto header = static_cast<QNetworkRequest::KnownHeaders>(i);
+            QNetworkRequest tempRequest;
+            tempRequest.setHeader(header, "true");
+            if (tempRequest.header(header).isNull()) {
+                continue; // skip headers that are not set
+			}
+            s_knownHeaders.append(tempRequest.rawHeaderList().first());
+			s_knownHeaderMap.insert(header, s_knownHeaders.last());
+		}
+	}
 }
 
 
@@ -16,9 +33,6 @@ QNetworkReply* CRequestManager::SendRequest(QObject* handler, const QByteArray& 
     for (const auto& header : headers) {
         request.setRawHeader(header.first, header.second);
 	}
-    //request.setRawHeader("User-Agent", "Bootsmann 1.0");
-    //request.setHeader(QNetworkRequest::UserAgentHeader, "Bootsmann 1.0");
-    //request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     if (verb == "GET"){
         auto reply = m_manager.get(request);
@@ -48,6 +62,12 @@ QNetworkReply* CRequestManager::SendRequest(QObject* handler, const QByteArray& 
     // verb unknown, custom request instead
     auto reply = m_manager.sendCustomRequest(request, verb, payload);
     return DoProcessReply(handler, reply);
+}
+
+
+const QByteArray CRequestManager::GetKnownHeader(QNetworkRequest::KnownHeaders type)
+{
+	return s_knownHeaderMap.value(type, QByteArray());
 }
 
 

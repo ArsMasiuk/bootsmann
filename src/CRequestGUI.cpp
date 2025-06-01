@@ -15,12 +15,7 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
 
     ui->splitter->setSizes(QList<int>({ INT_MAX, INT_MAX }));
 
-    ui->RequestHeaders->setRowCount(0);
-    ui->RequestHeaders->setColumnCount(2);
-    ui->RequestHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
 	SetDefaultHeaders();
-
-    ui->RequestParams->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
 
     ui->RequestTabs->setCurrentIndex(0);
 }
@@ -37,6 +32,44 @@ void CRequestGUI::Init()
     ClearResult();
 
     ui->RequestURL->setFocus(Qt::OtherFocusReason);
+}
+
+
+void CRequestGUI::Store(QSettings& settings) const
+{
+	// Request
+    settings.beginGroup("Request");
+    settings.setValue("RequestURL", ui->RequestURL->text());
+    settings.setValue("RequestType", ui->RequestType->currentText());
+    settings.setValue("RequestBody", ui->RequestBody->toPlainText());
+	settings.endGroup();
+
+    // Request headers
+    settings.beginGroup("RequestHeaders");
+    //QNetworkCacheMetaData::RawHeaderList headers = GetRequestHeaders();
+    //settings.setValue("RequestHeaders", QVariant::fromValue(headers));
+    settings.endGroup();
+
+	// Request parameters
+    settings.beginGroup("RequestParams");
+    //QNetworkCacheMetaData::RawHeaderList params = GetRequestParams();
+    //settings.setValue("RequestParams", QVariant::fromValue(params));
+	settings.endGroup();
+    
+	// Autentication settings
+	settings.beginGroup("Authentication");
+	settings.endGroup();
+
+    // UI
+    settings.beginGroup("UI");
+	settings.setValue("SplitterState", ui->splitter->saveState());
+	settings.endGroup();
+}
+
+
+void CRequestGUI::Restore(const QSettings& settings)
+{
+    // to do
 }
 
 
@@ -130,7 +163,12 @@ void CRequestGUI::on_AddHeader_clicked()
 
 void CRequestGUI::on_RemoveHeader_clicked()
 {
-	auto asked = QMessageBox::question(this, tr("Remove Header"), 
+    auto currentRow = ui->RequestHeaders->currentRow();
+    if (currentRow < 0) {
+        return; // No row selected, do nothing
+	}
+
+    auto asked = QMessageBox::question(this, tr("Remove Header"),
         tr("Are you sure you want to remove the selected header?"), 
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (asked != QMessageBox::Yes) {
@@ -138,15 +176,7 @@ void CRequestGUI::on_RemoveHeader_clicked()
 	}
 
     // Remove the currently selected row from the RequestHeaders table
-    auto currentRow = ui->RequestHeaders->currentRow();
-    if (currentRow >= 0) {
-        ui->RequestHeaders->removeRow(currentRow);
-        if (currentRow < ui->RequestHeaders->rowCount()) {
-            ui->RequestHeaders->setCurrentCell(currentRow, 0);
-        }
-    } else {
-        // No row selected, do nothing or show a message
-	}
+    ui->RequestHeaders->DeleteCurrentRow();
 }
 
 
@@ -166,56 +196,52 @@ void CRequestGUI::on_ClearHeaders_clicked()
 }
 
 
+void CRequestGUI::on_AddParameter_clicked()
+{
+	ui->RequestParams->AddRowIfNotExists("<New Parameter>", "");
+}
+
+
+void CRequestGUI::on_RemoveParameter_clicked()
+{
+}
+
+
+void CRequestGUI::on_ClearParameters_clicked()
+{
+}
+
+
 void CRequestGUI::SetDefaultHeaders()
 {
     AddRequestHeader(QNetworkRequest::UserAgentHeader, qApp->applicationName() + " " + qApp->applicationVersion());
-    AddRequestHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    AddRequestHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
 }
 
 
 void CRequestGUI::AddRequestHeader(const QString& name, const QString& value)
 {
-	// check if header already exists
-    for (int i = 0; i < ui->RequestHeaders->rowCount(); ++i) {
-        if (ui->RequestHeaders->item(i, 0)->text() == name) {
-            ui->RequestHeaders->item(i, 1)->setText(value);
-			ui->RequestHeaders->setCurrentCell(i, 0);
-            return;
-        }
-    }
-
-    // add new header
-    int row = ui->RequestHeaders->rowCount();
-    ui->RequestHeaders->insertRow(row);
-    ui->RequestHeaders->setItem(row, 0, new QTableWidgetItem(name));
-	ui->RequestHeaders->setItem(row, 1, new QTableWidgetItem(value));
-    ui->RequestHeaders->setCurrentCell(row, 0);
+    ui->RequestHeaders->AddRowIfNotExists(name, value);
 }
 
 
 void CRequestGUI::AddRequestHeader(QNetworkRequest::KnownHeaders type, const QString& value)
 {
-	QNetworkRequest tempRequest;
-    tempRequest.setHeader(type, value);
-    QString headerName = tempRequest.rawHeaderList().first();
-    AddRequestHeader(headerName, value);
+    AddRequestHeader(CRequestManager::GetKnownHeader(type), value);
 }
 
 
 QNetworkCacheMetaData::RawHeaderList CRequestGUI::GetRequestHeaders() const
 {
+	auto activeHeaders = ui->RequestHeaders->GetEnabledParams();
+    if (activeHeaders.isEmpty()) {
+        return {}; // No headers to return
+	}
+
     QNetworkCacheMetaData::RawHeaderList headers;
 
-    for (int i = 0; i < ui->RequestHeaders->rowCount(); ++i) {
-        auto nameItem = ui->RequestHeaders->item(i, 0);
-        auto valueItem = ui->RequestHeaders->item(i, 1);
-        if (nameItem && valueItem) {
-            QString name = nameItem->text().trimmed();
-            QString value = valueItem->text().trimmed();
-            if (!name.isEmpty()) {
-                headers.append({ name.toUtf8(), value.toUtf8() });
-            }
-        }
+    for (const auto& header : activeHeaders) {
+        headers.append({ header.first.toUtf8(), header.second.toUtf8() });
 	}
 
     return headers;
@@ -252,7 +278,7 @@ void CRequestGUI::ClearResult()
 {
     ui->ResponseBody->clear();
 	ui->ResponseHeaders->setRowCount(0);
-    ui->ResponseHeaders->setColumnCount(2);
+	ui->ResponseHeaders->setColumnCount(2);
     ui->ResponseHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
     ui->TimeLabel->clear();
 	ui->ResultTabs->setCurrentIndex(0);

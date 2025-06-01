@@ -5,6 +5,7 @@
 #include <QNetworkReply>
 #include <QNetworkCacheMetaData>
 #include <QElapsedTimer>
+#include <QSettings>
 
 namespace Ui {
 class CRequestGUI;
@@ -22,6 +23,9 @@ public:
 
     void Init();
 
+	void Store(QSettings& settings) const;
+    void Restore(const QSettings& settings);
+
 Q_SIGNALS:
     void RequestTitleChanged(const QString& title);
 
@@ -31,9 +35,14 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void on_Run_clicked();
+
 	void on_AddHeader_clicked();
     void on_RemoveHeader_clicked();
 	void on_ClearHeaders_clicked();
+
+	void on_AddParameter_clicked();
+	void on_RemoveParameter_clicked();
+	void on_ClearParameters_clicked();
 
 private:
     void SetDefaultHeaders();

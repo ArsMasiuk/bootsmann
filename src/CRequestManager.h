@@ -20,6 +20,9 @@ public:
         const QByteArray& payload = "", 
         QNetworkCacheMetaData::RawHeaderList headers = {});
 
+	static const QByteArrayList& GetKnownHeaders() { return s_knownHeaders; }
+    static const QByteArray GetKnownHeader(QNetworkRequest::KnownHeaders type);
+
 Q_SIGNALS:
     void RequestSuccess(QNetworkReply* reply, int code, const QString& errorMsg);
     void RequestError(QNetworkReply* reply, int code, const QString& errorMsg);
@@ -29,6 +32,9 @@ protected:
 
 private:
     QNetworkAccessManager m_manager;
+
+	static QByteArrayList s_knownHeaders;
+	static QMap<QNetworkRequest::KnownHeaders, QByteArray> s_knownHeaderMap;
 };
 
 #endif // CREQUESTMANAGER_H
