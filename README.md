@@ -1,6 +1,8 @@
 # Bootsmann
 A minimalistic, lean and fast REST API test application (opensource C++ alternative to Postman/Insomnia/Hoppscotch etc.)
 
+![image](https://github.com/user-attachments/assets/a1f042e7-9da4-4321-bbbe-0adbba0fafdd)
+
 ## Key Features
 - **Lean**: Designed to be lightweight - low memory footprint and resource usage.
 - **Native code**: Built with a C++ compiler - no Electron or other web-based frameworks used.
@@ -20,7 +22,6 @@ A minimalistic, lean and fast REST API test application (opensource C++ alternat
 | Responce timings  | 150 ms           | 80 ms
 
 (Measurements are done on the same hardware and OS, running the same REST API requests. Values are averages of 10 runs.)
-
 
 ## Support
 Since **Bootsmann** is a free software, it is developed in my spare time entirely at my own expense.
