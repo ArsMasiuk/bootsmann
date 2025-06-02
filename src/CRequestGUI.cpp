@@ -18,6 +18,8 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
 	SetDefaultHeaders();
 
     ui->RequestTabs->setCurrentIndex(0);
+
+	ui->ResponseHeaders->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 }
 
 
@@ -373,7 +375,7 @@ void CRequestGUI::on_Run_clicked()
     LockRequest();
     ClearResult();
 
-    QString request = ui->RequestURL->text();
+    QString request = ui->RequestURL->text().trimmed();
     QString verb = ui->RequestType->currentText();
     QString payload = ui->RequestBody->toPlainText();
 

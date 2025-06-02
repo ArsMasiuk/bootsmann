@@ -1,15 +1,19 @@
 #include "CParamTable.h"
 
+#include <QHeaderView>
+
 
 CParamTable::CParamTable(QWidget* parent)
 	: QTableWidget(parent)
 {
 	setColumnCount(3);
 	setHorizontalHeaderLabels({ tr("Name"), tr("Value"), tr("Use") });
+	horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+	horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+	horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
 	setColumnWidth(2, 40);
 	setSelectionBehavior(QAbstractItemView::SelectRows);
 	setSelectionMode(QAbstractItemView::SingleSelection);
-	//setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked);
 }
 
 
