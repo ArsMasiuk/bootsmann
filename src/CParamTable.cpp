@@ -97,3 +97,18 @@ CParamTable::ParamList CParamTable::GetEnabledParams() const
 
 	return result;
 }
+
+
+// IO
+
+void CParamTable::Store(QSettings& settings) const
+{
+	for (int row = 0; row < rowCount(); ++row) {
+		QString name = item(row, 0)->text();
+		QString value = item(row, 1)->text();
+		bool on = (item(row, 2)->checkState() == Qt::Checked);
+		//settings.setValue(name, QVariant::fromValue(std::make_pair(value, on)));
+		auto key = QVariant::fromValue(std::make_pair(name, value)).toString();
+		settings.setValue(key, on);
+	}
+}

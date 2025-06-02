@@ -44,6 +44,10 @@ private Q_SLOTS:
 	void on_RemoveParameter_clicked();
 	void on_ClearParameters_clicked();
 
+    void on_RequestURL_textEdited(const QString& text);
+
+	void on_RequestParams_cellChanged(int row, int column);
+
 private:
     void SetDefaultHeaders();
 	void AddRequestHeader(const QString& name, const QString& value);
@@ -53,6 +57,8 @@ private:
     void LockRequest();
 	void UnlockRequest();
 	void ClearResult();
+
+    void RebuildURL();
 
     Ui::CRequestGUI *ui;
 

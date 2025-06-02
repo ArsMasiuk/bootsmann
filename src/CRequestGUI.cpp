@@ -46,14 +46,12 @@ void CRequestGUI::Store(QSettings& settings) const
 
     // Request headers
     settings.beginGroup("RequestHeaders");
-    //QNetworkCacheMetaData::RawHeaderList headers = GetRequestHeaders();
-    //settings.setValue("RequestHeaders", QVariant::fromValue(headers));
+    ui->RequestHeaders->Store(settings);
     settings.endGroup();
 
 	// Request parameters
     settings.beginGroup("RequestParams");
-    //QNetworkCacheMetaData::RawHeaderList params = GetRequestParams();
-    //settings.setValue("RequestParams", QVariant::fromValue(params));
+    ui->RequestParams->Store(settings);
 	settings.endGroup();
     
 	// Autentication settings
@@ -70,6 +68,8 @@ void CRequestGUI::Store(QSettings& settings) const
 void CRequestGUI::Restore(const QSettings& settings)
 {
     // to do
+
+    RebuildURL();
 }
 
 
@@ -198,17 +198,62 @@ void CRequestGUI::on_ClearHeaders_clicked()
 
 void CRequestGUI::on_AddParameter_clicked()
 {
+    ui->RequestParams->blockSignals(true);
 	ui->RequestParams->AddRowIfNotExists("<New Parameter>", "");
+    ui->RequestParams->blockSignals(false);
 }
 
 
 void CRequestGUI::on_RemoveParameter_clicked()
 {
+    auto currentRow = ui->RequestParams->currentRow();
+    if (currentRow < 0) {
+        return; // No row selected, do nothing
+    }
+
+    auto asked = QMessageBox::question(this, tr("Remove Parameter"),
+        tr("Are you sure you want to remove the selected parameter?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (asked != QMessageBox::Yes) {
+        return;
+    }
+
+    // Remove the currently selected row
+    ui->RequestParams->DeleteCurrentRow();
+
+    // Update URL
+    RebuildURL();
 }
 
 
 void CRequestGUI::on_ClearParameters_clicked()
 {
+    if (ui->RequestParams->rowCount() == 0)
+        return;
+
+    auto asked = QMessageBox::question(this, tr("Reset Parameters"),
+        tr("Are you sure you want to remove all the parameters?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (asked != QMessageBox::Yes) {
+        return; // User chose not to clear headers
+    }
+
+    ui->RequestParams->setRowCount(0);
+
+    // Update URL
+    RebuildURL();
+}
+
+
+void CRequestGUI::on_RequestURL_textEdited(const QString& text)
+{
+}
+
+
+void CRequestGUI::on_RequestParams_cellChanged(int /*row*/, int /*column*/)
+{
+    RebuildURL();
 }
 
 
@@ -282,6 +327,44 @@ void CRequestGUI::ClearResult()
     ui->ResponseHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
     ui->TimeLabel->clear();
 	ui->ResultTabs->setCurrentIndex(0);
+}
+
+
+void CRequestGUI::RebuildURL()
+{
+	ui->RequestURL->blockSignals(true); // Block signals to prevent infinite loop
+
+    QUrl sourceUrl(ui->RequestURL->text());
+
+    QString scheme = sourceUrl.scheme();
+    QString user = sourceUrl.userInfo();
+    QString password = sourceUrl.password();
+    QString host = sourceUrl.host();
+	QString query = sourceUrl.query();
+	QString port = QString::number(sourceUrl.port(-1)); // -1 means use default port for the scheme
+	QString fragment = sourceUrl.fragment();
+
+    // cut parameters from the URL
+    QUrl targetUrl(sourceUrl.adjusted(QUrl::RemoveQuery));
+	
+	//targetUrl.setQuery(""); // Clear existing query parameters
+	auto params = ui->RequestParams->GetEnabledParams();
+    if (!params.isEmpty()) {
+        QStringList queryParts;
+        for (const auto& param : params) {
+            queryParts.append(QString("%1=%2").arg(param.first, param.second));
+        }
+        targetUrl.setQuery(queryParts.join("&")); // Set new query parameters
+	}
+
+    // update login:password
+    //targetUrl.setUserInfo("");
+
+	qDebug() << targetUrl.toString(QUrl::FullyEncoded);
+
+	ui->RequestURL->setText(targetUrl.toString(QUrl::FullyEncoded));
+
+	ui->RequestURL->blockSignals(false); // Unblock signals
 }
 
 

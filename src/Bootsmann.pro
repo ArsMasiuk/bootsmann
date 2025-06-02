@@ -21,7 +21,7 @@ win32{
 	VERSION = 0.1.0.0
 	RC_ICONS = $$PWD/../win32/icon.ico
 	QMAKE_TARGET_COPYRIGHT = (C) 2025 Ars L. Masiuk
-	QMAKE_TARGET_DESCRIPTION = Minimalistic native remote API testing application
+	QMAKE_TARGET_DESCRIPTION = Bootsmann REST API Tester
 	QMAKE_TARGET_PRODUCT = Bootsmann
 	LIBS += -ladvapi32
 }

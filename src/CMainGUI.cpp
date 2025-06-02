@@ -38,7 +38,7 @@ CMainGUI::CMainGUI(QWidget *parent)
 
     // init
 	qApp->setApplicationDisplayName(qApp->applicationName() + " " + qApp->applicationVersion());
-    setWindowTitle(qApp->applicationDisplayName());
+    setWindowTitle(tr("Default Workspace"));
 
     // add defautl request manager
     auto reqMgr = new CRequestManager(this);

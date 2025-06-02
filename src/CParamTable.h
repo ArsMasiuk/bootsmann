@@ -3,6 +3,7 @@
 #include <QTableWidget>
 #include <QList>
 #include <QPair>
+#include <QSettings>
 
 class CParamTable : public QTableWidget
 {
@@ -18,5 +19,8 @@ public:
 
 	typedef QList<QPair<QString, QString>> ParamList;
 	ParamList GetEnabledParams() const;
+
+	// IO
+	void Store(QSettings& settings) const;
 };
 
