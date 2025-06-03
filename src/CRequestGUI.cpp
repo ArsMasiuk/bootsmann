@@ -37,7 +37,7 @@ void CRequestGUI::Init()
 }
 
 
-void CRequestGUI::Store(QSettings& settings) const
+bool CRequestGUI::Store(QSettings& settings) const
 {
 	// Request
     settings.beginGroup("Request");
@@ -64,14 +64,45 @@ void CRequestGUI::Store(QSettings& settings) const
     settings.beginGroup("UI");
 	settings.setValue("SplitterState", ui->splitter->saveState());
 	settings.endGroup();
+
+    return true;
 }
 
 
-void CRequestGUI::Restore(const QSettings& settings)
+bool CRequestGUI::Restore(QSettings& settings)
 {
-    // to do
+    // Request
+    settings.beginGroup("Request");
+	ui->RequestURL->setText(settings.value("RequestURL", "").toString());
+	ui->RequestType->setCurrentText(settings.value("RequestType", "GET").toString());
+	ui->RequestBody->setPlainText(settings.value("RequestBody", "").toString());
+    settings.endGroup();
 
-    RebuildURL();
+    // Request headers
+    settings.beginGroup("RequestHeaders");
+	ui->RequestHeaders->Restore(settings);
+    settings.endGroup();
+
+    // Request parameters
+    settings.beginGroup("RequestParams");
+    ui->RequestParams->Restore(settings);
+    settings.endGroup();
+
+    // Autentication settings
+    settings.beginGroup("Authentication");
+    settings.endGroup();
+
+    // UI
+    settings.beginGroup("UI");
+	ui->splitter->restoreState(settings.value("SplitterState").toByteArray());
+    settings.endGroup();
+
+
+    // request title
+    QString requestTitle = ui->RequestType->currentText() + " " + ui->RequestURL->text();
+    Q_EMIT RequestTitleChanged(requestTitle);
+
+    return true;
 }
 
 
@@ -84,6 +115,9 @@ void CRequestGUI::OnRequestSuccess()
 
     auto reply = qobject_cast<QNetworkReply*>(sender());
     reply->deleteLater(); // delete reply object after processing
+
+	// update response size
+	ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
 
     // update status
     auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -135,6 +169,9 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 
     auto reply = qobject_cast<QNetworkReply*>(sender());
     reply->deleteLater(); // delete reply object after processing
+
+    // update response size
+    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
 
     // update status
     auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
@@ -248,8 +285,53 @@ void CRequestGUI::on_ClearParameters_clicked()
 }
 
 
-void CRequestGUI::on_RequestURL_textEdited(const QString& text)
+void CRequestGUI::on_RequestURL_editingFinished()
 {
+    QString verb = ui->RequestType->currentText();
+	QString request = ui->RequestURL->text().trimmed();
+    
+    // request title
+    QString requestTitle = verb + " " + request;
+    Q_EMIT RequestTitleChanged(requestTitle);
+    
+    // parse URL and update request parameters
+    QUrl sourceUrl(request);
+    //if (!sourceUrl.isValid()) {
+    //    QMessageBox::warning(this, tr("Invalid URL"), tr("The provided URL is not valid."));
+    //    return;
+
+    // Clear existing active parameters
+    ui->RequestParams->DeleteActiveRows();
+
+    // Extract query parameters from the URL
+    auto queryItems = sourceUrl.query();
+    if (queryItems.isEmpty())
+        return;
+
+    ui->RequestParams->setUpdatesEnabled(false);
+    ui->RequestParams->blockSignals(true);
+
+	auto queryPairs = queryItems.split('&', Qt::SkipEmptyParts);
+    for (const auto& pair : queryPairs) {
+        auto keyValue = pair.split('=');
+		QString key, value;
+        key = QUrl::fromPercentEncoding(keyValue[0].toUtf8());
+        if (keyValue.size() == 2) {
+            value = QUrl::fromPercentEncoding(keyValue[1].toUtf8());
+        }
+
+		// if parameter and value already exist, aktivate it
+		int foundRow = ui->RequestParams->FindRow(key, value);
+        if (foundRow >= 0) {
+            ui->RequestParams->SetActive(foundRow, true);
+        } else {
+            // Add new parameter if it doesn't exist
+            ui->RequestParams->AddRow(key, value, true);
+		}
+    }
+
+    ui->RequestParams->setUpdatesEnabled(true);
+    ui->RequestParams->blockSignals(false);
 }
 
 
@@ -328,6 +410,7 @@ void CRequestGUI::ClearResult()
 	ui->ResponseHeaders->setColumnCount(2);
     ui->ResponseHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
     ui->TimeLabel->clear();
+	ui->ResponseSizeLabel->clear();
 	ui->ResultTabs->setCurrentIndex(0);
 }
 
@@ -378,11 +461,6 @@ void CRequestGUI::on_Run_clicked()
     QString request = ui->RequestURL->text().trimmed();
     QString verb = ui->RequestType->currentText();
     QString payload = ui->RequestBody->toPlainText();
-
-    // request title
-	QString requestTitle = verb + " " + request;
-	Q_EMIT RequestTitleChanged(requestTitle);
-
 
     if (request.isEmpty()){
 		UnlockRequest();

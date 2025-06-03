@@ -5,6 +5,7 @@
 
 #include <QTabBar>
 #include <QToolButton>
+#include <QFileDialog>
 
 
 const int INFO_TAB_INDEX = 0;
@@ -49,6 +50,41 @@ CWorkspaceGUI::CWorkspaceGUI(CRequestManager& reqMgr, QWidget *parent)
 CWorkspaceGUI::~CWorkspaceGUI()
 {
     delete ui;
+}
+
+
+bool CWorkspaceGUI::SaveCurrentRequest()
+{
+	auto currentTab = ui->Tabs->currentWidget();
+	if (!currentTab)
+        return false;
+
+	auto requestUI = dynamic_cast<CRequestGUI*>(currentTab);
+    if (!requestUI)
+		return false;
+
+	QString savePath = QFileDialog::getSaveFileName(this, tr("Save Request"), QString(), tr("Bootsmann Requests (*.bor);;All Files (*)"));
+	if (savePath.isEmpty())
+		return false;
+
+	QSettings settings(savePath, QSettings::IniFormat);
+	return requestUI->Store(settings);
+}
+
+
+bool CWorkspaceGUI::LoadRequest()
+{
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Load Request"), "", tr("Bootsmann Requests (*.bor);;All Files (*)"));
+    if (filePath.isEmpty())
+        return false;
+
+    int index = AddRequestTab();
+    auto requestUI = dynamic_cast<CRequestGUI*>(ui->Tabs->currentWidget());
+    if (!requestUI)
+        return false;
+
+    QSettings settings(filePath, QSettings::IniFormat);
+    return requestUI->Restore(settings);
 }
 
 

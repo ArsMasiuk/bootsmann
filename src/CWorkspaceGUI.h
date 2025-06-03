@@ -18,6 +18,8 @@ public:
     ~CWorkspaceGUI();
 
 	int CreateNewRequest() { return AddRequestTab(); }
+	bool SaveCurrentRequest();
+	bool LoadRequest();
 
 protected:
     int AddRequestTab();

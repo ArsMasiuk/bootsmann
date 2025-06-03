@@ -41,6 +41,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QComboBox" name="RequestType">
+            <property name="toolTip">
+             <string>Request type</string>
+            </property>
             <property name="currentText">
              <string notr="true">GET</string>
             </property>
@@ -104,10 +107,19 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="toolTip">
+             <string>Request URL</string>
+            </property>
+            <property name="placeholderText">
+             <string>&lt;Put request here&gt;</string>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="Run">
+            <property name="toolTip">
+             <string>Execute request</string>
+            </property>
             <property name="text">
              <string>Run</string>
             </property>
@@ -119,7 +131,7 @@
        <item>
         <widget class="QTabWidget" name="RequestTabs">
          <property name="currentIndex">
-          <number>2</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="RequestBodyTab">
           <attribute name="title">
@@ -132,7 +144,7 @@
               <bool>false</bool>
              </property>
              <property name="placeholderText">
-              <string>&lt;Write request body here&gt;</string>
+              <string>&lt;Put request body here&gt;</string>
              </property>
             </widget>
            </item>
@@ -312,10 +324,48 @@
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
              <widget class="QLabel" name="ResultCode">
+              <property name="toolTip">
+               <string>Request execution status</string>
+              </property>
               <property name="text">
                <string>[Not executed yet]</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="ResponseSizeLabel">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="toolTip">
+               <string>Response size (in bytes)</string>
+              </property>
+              <property name="text">
+               <string>0 B</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
             <item>
              <widget class="QLabel" name="TimeLabel">
@@ -324,6 +374,9 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="toolTip">
+               <string>Request execution time (in milliseconds)</string>
               </property>
               <property name="text">
                <string>0 ms</string>
@@ -341,7 +394,7 @@
        <item>
         <widget class="QTabWidget" name="ResultTabs">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="ResponceTab">
           <attribute name="title">
@@ -350,6 +403,9 @@
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <widget class="QPlainTextEdit" name="ResponseBody">
+             <property name="toolTip">
+              <string>Data received</string>
+             </property>
              <property name="readOnly">
               <bool>true</bool>
              </property>
@@ -364,6 +420,9 @@
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
             <widget class="QTableWidget" name="ResponseHeaders">
+             <property name="toolTip">
+              <string>Headers received</string>
+             </property>
              <property name="editTriggers">
               <set>QAbstractItemView::NoEditTriggers</set>
              </property>

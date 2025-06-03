@@ -86,6 +86,77 @@ bool CParamTable::DeleteCurrentRow()
 }
 
 
+int CParamTable::DeleteActiveRows()
+{
+	int count = 0;
+	for (int i = 0; i < rowCount(); ++i) {
+		QTableWidgetItem* item = this->item(i, 2);
+		if (item->checkState() == Qt::Checked) {
+			removeRow(i);
+			i--;
+			count++;
+		}
+	}
+
+	return count;
+}
+
+
+int CParamTable::DeleteInactiveRows()
+{
+	int count = 0;
+	for (int i = 0; i < rowCount(); ++i) {
+		QTableWidgetItem* item = this->item(i, 2);
+		if (item->checkState() == Qt::Unchecked) {
+			removeRow(i);
+			i--;
+			count++;
+		}
+	}
+
+	return count;
+}
+
+
+bool CParamTable::IsActive(int row) const
+{
+	if (row < 0 || row >= rowCount())
+		return false;
+
+	QTableWidgetItem* item = this->item(row, 2);
+	return item && item->checkState() == Qt::Checked;
+}
+
+
+bool CParamTable::SetActive(int row, bool on)
+{
+	if (row < 0 || row >= rowCount())
+		return false;
+
+	QTableWidgetItem* item = this->item(row, 2);
+	if (item) {
+		item->setCheckState(on ? Qt::Checked : Qt::Unchecked);
+		return true;
+	}
+
+	return false;
+}
+
+
+int CParamTable::FindRow(const QString& name, const QString& value) const
+{
+	for (int i = 0; i < rowCount(); ++i) {
+		QTableWidgetItem* nameItem = this->item(i, 0);
+		QTableWidgetItem* valueItem = this->item(i, 1);
+		if (nameItem && valueItem &&
+			nameItem->text() == name && valueItem->text() == value) {
+			return i; // Found
+		}
+	}
+	return -1; // Not found
+}
+
+
 CParamTable::ParamList CParamTable::GetEnabledParams() const
 {
 	ParamList result;
@@ -107,12 +178,29 @@ CParamTable::ParamList CParamTable::GetEnabledParams() const
 
 void CParamTable::Store(QSettings& settings) const
 {
+	settings.beginWriteArray("Items", rowCount());
 	for (int row = 0; row < rowCount(); ++row) {
-		QString name = item(row, 0)->text();
-		QString value = item(row, 1)->text();
-		bool on = (item(row, 2)->checkState() == Qt::Checked);
-		//settings.setValue(name, QVariant::fromValue(std::make_pair(value, on)));
-		auto key = QVariant::fromValue(std::make_pair(name, value)).toString();
-		settings.setValue(key, on);
+		settings.setArrayIndex(row);
+		settings.setValue("Key", item(row, 0) ? item(row, 0)->text() : "");
+		settings.setValue("Value", item(row, 1) ? item(row, 1)->text() : "");
+		settings.setValue("Active", item(row, 2) ? (item(row, 2)->checkState() == Qt::Checked) : false);
 	}
+	settings.endArray();
+}
+
+
+void CParamTable::Restore(QSettings& settings)
+{
+	clear();
+	setRowCount(0);
+
+	int rows = settings.beginReadArray("Items");
+	for (int row = 0; row < rows; ++row) {
+		settings.setArrayIndex(row);
+		auto key = settings.value("Key").toString();
+		auto value = settings.value("Value").toString();
+		bool active = settings.value("Active").toBool();
+		AddRow(key, value, active);
+	}
+	settings.endArray();
 }

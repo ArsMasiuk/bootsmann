@@ -23,8 +23,8 @@ public:
 
     void Init();
 
-	void Store(QSettings& settings) const;
-    void Restore(const QSettings& settings);
+	bool Store(QSettings& settings) const;
+    bool Restore(QSettings& settings);
 
 Q_SIGNALS:
     void RequestTitleChanged(const QString& title);
@@ -44,7 +44,7 @@ private Q_SLOTS:
 	void on_RemoveParameter_clicked();
 	void on_ClearParameters_clicked();
 
-    void on_RequestURL_textEdited(const QString& text);
+    void on_RequestURL_editingFinished();
 
 	void on_RequestParams_cellChanged(int row, int column);
 

@@ -26,6 +26,8 @@ public Q_SLOTS:
 	//void on_actionAboutQt_triggered();
 	//void on_actionSettings_triggered();
 	void on_actionNewRequest_triggered();
+	void on_actionSaveRequest_triggered();
+	void on_actionLoadRequest_triggered();
 
 private:
     Ui::CMainGUI *ui;

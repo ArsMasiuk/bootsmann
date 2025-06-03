@@ -16,11 +16,18 @@ public:
 	int AddRowIfNotExists(const QString& name = "", const QString& value = "", bool on = true);
 	bool DeleteRow(int row);
 	bool DeleteCurrentRow();
+	int DeleteActiveRows();
+	int DeleteInactiveRows();
+
+	bool IsActive(int row) const;
+	bool SetActive(int row, bool on);
+	int FindRow(const QString& name, const QString& value) const;
 
 	typedef QList<QPair<QString, QString>> ParamList;
 	ParamList GetEnabledParams() const;
 
 	// IO
 	void Store(QSettings& settings) const;
+	void Restore(QSettings& settings);
 };
 

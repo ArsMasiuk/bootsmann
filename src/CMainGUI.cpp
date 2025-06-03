@@ -71,3 +71,15 @@ void CMainGUI::on_actionNewRequest_triggered()
 {
     m_activeWorkspace->CreateNewRequest();
 }
+
+
+void CMainGUI::on_actionSaveRequest_triggered()
+{
+    m_activeWorkspace->SaveCurrentRequest();
+}
+
+
+void CMainGUI::on_actionLoadRequest_triggered()
+{
+    m_activeWorkspace->LoadRequest();
+}
