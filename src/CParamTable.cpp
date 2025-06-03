@@ -191,7 +191,6 @@ void CParamTable::Store(QSettings& settings) const
 
 void CParamTable::Restore(QSettings& settings)
 {
-	clear();
 	setRowCount(0);
 
 	int rows = settings.beginReadArray("Items");
