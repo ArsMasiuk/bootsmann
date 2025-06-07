@@ -22,6 +22,7 @@ public:
     ~CRequestGUI();
 
     void Init();
+    bool IsDefault() const;
 
 	bool Store(QSettings& settings) const;
     bool Restore(QSettings& settings);
@@ -59,6 +60,8 @@ private:
 	void ClearResult();
 
     void RebuildURL();
+
+	void DecodeReply(QNetworkReply* reply, const QByteArray& data);
 
     Ui::CRequestGUI *ui;
 

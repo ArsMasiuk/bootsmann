@@ -78,8 +78,13 @@ bool CWorkspaceGUI::LoadRequest()
     if (filePath.isEmpty())
         return false;
 
-    int index = AddRequestTab();
     auto requestUI = dynamic_cast<CRequestGUI*>(ui->Tabs->currentWidget());
+    if (!requestUI || !requestUI->IsDefault()) {
+        // otherwise, create a new tab
+        AddRequestTab();
+        auto requestUI = dynamic_cast<CRequestGUI*>(ui->Tabs->currentWidget());
+    }
+
     if (!requestUI)
         return false;
 

@@ -4,6 +4,8 @@
 #include "CRequestManager.h"
 
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QTemporaryFile>
 
 
 CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
@@ -71,10 +73,18 @@ bool CRequestGUI::Store(QSettings& settings) const
 
 bool CRequestGUI::Restore(QSettings& settings)
 {
+    ui->RequestURL->blockSignals(true);
+    ui->RequestType->blockSignals(true);
+    ui->RequestHeaders->blockSignals(true);
+    ui->RequestParams->blockSignals(true);
+
     // Request
     settings.beginGroup("Request");
-	ui->RequestURL->setText(settings.value("RequestURL", "").toString());
-	ui->RequestType->setCurrentText(settings.value("RequestType", "GET").toString());
+	auto requestUrl = settings.value("RequestURL", "").toByteArray();
+	QString requestUrlStr = QUrl::fromPercentEncoding(requestUrl);
+	ui->RequestURL->setText(requestUrlStr);
+	QString verb = settings.value("RequestType", "GET").toString();
+	ui->RequestType->setCurrentText(verb);
 	ui->RequestBody->setPlainText(settings.value("RequestBody", "").toString());
     settings.endGroup();
 
@@ -97,12 +107,27 @@ bool CRequestGUI::Restore(QSettings& settings)
 	ui->splitter->restoreState(settings.value("SplitterState").toByteArray());
     settings.endGroup();
 
+    // done
+    ui->RequestURL->blockSignals(false);
+    ui->RequestType->blockSignals(false);
+    ui->RequestHeaders->blockSignals(false);
+    ui->RequestParams->blockSignals(false);
 
     // request title
-    QString requestTitle = ui->RequestType->currentText() + " " + ui->RequestURL->text();
+    QString requestTitle = verb + " " + requestUrlStr;
     Q_EMIT RequestTitleChanged(requestTitle);
 
     return true;
+}
+
+
+bool CRequestGUI::IsDefault() const
+{
+    // Implement logic to determine if the request is default.  
+    // For example, check if certain fields are empty or have default values.  
+    return ui->RequestURL->text().isEmpty() 
+        && ui->RequestParams->rowCount() == 0 
+        && ui->RequestBody->toPlainText().isEmpty();
 }
 
 
@@ -114,7 +139,7 @@ void CRequestGUI::OnRequestSuccess()
     UnlockRequest();
 
     auto reply = qobject_cast<QNetworkReply*>(sender());
-    reply->deleteLater(); // delete reply object after processing
+    //reply->deleteLater(); // delete reply object after processing
 
 	// update response size
 	ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
@@ -140,10 +165,18 @@ void CRequestGUI::OnRequestSuccess()
     ui->ResultCode->setText(statusText);
 
     // update body
-	auto result = reply->readAll();
-    if (!result.isEmpty()) {
-        ui->ResponseBody->appendPlainText(result);
-    }
+
+    QObject::connect(reply, &QNetworkReply::finished, [=]() 
+    {
+            QByteArray data = reply->readAll();
+            if (!data.isEmpty()) {
+                ui->ResponseBody->appendPlainText(data);
+
+                DecodeReply(reply, data);
+            }
+
+            reply->deleteLater(); // delete reply object after processing
+    });
 
 	// update headers
     const auto &headers = reply->rawHeaderPairs();
@@ -405,6 +438,7 @@ void CRequestGUI::UnlockRequest()
 
 void CRequestGUI::ClearResult()
 {
+	ui->ResponsePreview->clear();
     ui->ResponseBody->clear();
 	ui->ResponseHeaders->setRowCount(0);
 	ui->ResponseHeaders->setColumnCount(2);
@@ -412,6 +446,7 @@ void CRequestGUI::ClearResult()
     ui->TimeLabel->clear();
 	ui->ResponseSizeLabel->clear();
 	ui->ResultTabs->setCurrentIndex(0);
+    ui->ReplyStack->setCurrentIndex(0);
 }
 
 
@@ -450,6 +485,73 @@ void CRequestGUI::RebuildURL()
 	ui->RequestURL->setText(targetUrl.toString(QUrl::FullyEncoded));
 
 	ui->RequestURL->blockSignals(false); // Unblock signals
+}
+
+
+void CRequestGUI::DecodeReply(QNetworkReply* reply, const QByteArray& data)
+{
+    // Example implementation to decode the reply  
+    // You can customize this based on your application's requirements  
+
+    // Check the content type of the reply  
+    auto contentType = reply->header(QNetworkRequest::ContentTypeHeader).toString();
+
+    // images
+    if (contentType.contains("image/", Qt::CaseInsensitive)) {
+        QPixmap pm;
+        if (pm.loadFromData(data))
+        {
+            //ui->ResponceLabel->setPixmap(pm);
+            //ui->ReplyStack->setCurrentIndex(1);
+
+			ui->ResponsePreview->document()->addResource(QTextDocument::ImageResource, QUrl("image://pm"), pm);
+            ui->ResponsePreview->setHtml(QString("<img src='image://pm'/>"));
+        }
+        else
+        {
+            ui->ResponsePreview->setHtml(tr("<font color=red>Cannot decode image format</font>"));
+            ui->ReplyStack->setCurrentIndex(0);
+        }
+
+        /*
+        // save data to file
+        QTemporaryFile f("image.img");
+        f.open();
+        f.write(data);
+        QString name = f.fileName();
+        f.close();
+
+            // TEST
+		ui->ResponsePreview->setHtml(QString("<img src='file:///%1'/>").arg(name));
+			//ui->ResponsePreview->setSource(QUrl::fromLocalFile("file:///c:/Test/bubble-chains/gui/add_user.png"), QTextDocument::ImageResource); // Placeholder image
+        } else {
+            ui->ResponsePreview->setPlainText(tr("<Cannot decode image format>"));
+        }*/
+        return; // Exit early for image handling
+	}
+
+	// text, JSON, HTML...
+    ui->ReplyStack->setCurrentIndex(0);
+
+    if (contentType.contains("application/json", Qt::CaseInsensitive)) {
+        // If the content is JSON, parse it  
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
+        if (!jsonDoc.isNull()) {
+            ui->ResponsePreview->setPlainText(jsonDoc.toJson(QJsonDocument::Indented));
+        }
+        else {
+            ui->ResponsePreview->setPlainText(tr("<Invalid JSON response>"));
+        }
+    }
+    else if (contentType.contains("text/html", Qt::CaseInsensitive)) {
+        // If the content is HTML, display it as is  
+        ui->ResponsePreview->setHtml(QString::fromUtf8(data));
+    }
+    else {
+        // For other content types, display as plain text  
+        ui->ResponsePreview->setPlainText(QString::fromUtf8(data));
+    }
+    
 }
 
 
