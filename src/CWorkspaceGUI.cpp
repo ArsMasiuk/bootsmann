@@ -78,11 +78,11 @@ bool CWorkspaceGUI::LoadRequest()
     if (filePath.isEmpty())
         return false;
 
-    auto requestUI = dynamic_cast<CRequestGUI*>(ui->Tabs->currentWidget());
+    auto requestUI = GetCurrentRequest();
     if (!requestUI || !requestUI->IsDefault()) {
-        // otherwise, create a new tab
+        // if no request or it is not default -> create a new tab
         AddRequestTab();
-        auto requestUI = dynamic_cast<CRequestGUI*>(ui->Tabs->currentWidget());
+        requestUI = GetCurrentRequest();
     }
 
     if (!requestUI)
@@ -90,6 +90,12 @@ bool CWorkspaceGUI::LoadRequest()
 
     QSettings settings(filePath, QSettings::IniFormat);
     return requestUI->Restore(settings);
+}
+
+
+CRequestGUI* CWorkspaceGUI::GetCurrentRequest()
+{
+    return dynamic_cast<CRequestGUI*>(ui->Tabs->currentWidget());
 }
 
 

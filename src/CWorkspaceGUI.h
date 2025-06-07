@@ -8,6 +8,7 @@ class CWorkspaceGUI;
 }
 
 class CRequestManager;
+class CRequestGUI;
 
 class CWorkspaceGUI : public QWidget
 {
@@ -20,6 +21,7 @@ public:
 	int CreateNewRequest() { return AddRequestTab(); }
 	bool SaveCurrentRequest();
 	bool LoadRequest();
+	CRequestGUI* GetCurrentRequest();
 
 protected:
     int AddRequestTab();
