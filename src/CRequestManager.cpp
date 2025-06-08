@@ -77,7 +77,7 @@ QNetworkReply* CRequestManager::DoProcessReply(QObject* handler, QNetworkReply* 
         return nullptr;
     }
 
-    connect(reply, SIGNAL(readyRead()), handler, SLOT(OnRequestSuccess()));
+    connect(reply, SIGNAL(finished()), handler, SLOT(OnRequestDone()));
     connect(reply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), handler, SLOT(OnRequestError(QNetworkReply::NetworkError)));
 
     // temp reply ID

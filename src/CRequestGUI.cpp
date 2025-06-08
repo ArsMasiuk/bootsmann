@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QTemporaryFile>
+#include <QImageReader>
+#include <QBuffer>
 
 
 CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
@@ -128,102 +130,6 @@ bool CRequestGUI::IsDefault() const
     return ui->RequestURL->text().isEmpty() 
         && ui->RequestParams->rowCount() == 0 
         && ui->RequestBody->toPlainText().isEmpty();
-}
-
-
-void CRequestGUI::OnRequestSuccess()
-{
-    auto ms = m_timer.elapsed();
-	ui->TimeLabel->setText(tr("%1 ms").arg(ms));
-
-    UnlockRequest();
-
-    auto reply = qobject_cast<QNetworkReply*>(sender());
-    //reply->deleteLater(); // delete reply object after processing
-
-	// update response size
-	ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
-
-    // update status
-    auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
-
-    auto statusText = tr("DONE. Code: %1").arg(statusCode);
-    if (statusCode == 200)
-        statusText += " [OK]";
-    else
-    if (statusReason.isEmpty() && reply->errorString().isEmpty()) {
-    }
-    else {
-        statusText += " [";
-        if (statusReason.size())
-            statusText += statusReason;
-        if (reply->errorString().size())
-            statusText += " " + reply->errorString();
-        statusText += "]";
-    }
-    ui->ResultCode->setText(statusText);
-
-    // update body
-
-    QObject::connect(reply, &QNetworkReply::finished, [=]() 
-    {
-            QByteArray data = reply->readAll();
-            if (!data.isEmpty()) {
-                ui->ResponseBody->appendPlainText(data);
-
-                DecodeReply(reply, data);
-            }
-
-            reply->deleteLater(); // delete reply object after processing
-    });
-
-	// update headers
-    const auto &headers = reply->rawHeaderPairs();
-	ui->ResponseHeaders->setRowCount(headers.size());
-
-    int r = 0;
-    for (const auto& header : headers) {
-		auto &key = header.first;
-        auto &value = header.second;
-		ui->ResponseHeaders->setItem(r, 0, new QTableWidgetItem(key));
-        ui->ResponseHeaders->setItem(r, 1, new QTableWidgetItem(value));
-        r++;
-    }
-}
-
-
-void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
-{
-    auto ms = m_timer.elapsed();
-    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
-
-	UnlockRequest();
-
-    auto reply = qobject_cast<QNetworkReply*>(sender());
-    reply->deleteLater(); // delete reply object after processing
-
-    // update response size
-    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
-
-    // update status
-    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
-
-	QString statusText = tr("FAILED. Code: %1").arg((int)code);
-    if (statusReason.size())
-		statusText += tr(" [%1]").arg(statusReason);
-
-	ui->ResultCode->setText(statusText);
-
-    auto errorText = reply->errorString();
-    if (!errorText.isEmpty()) {
-        ui->ResponseBody->appendPlainText(errorText);
-    }
-
-    auto result = reply->readAll();
-    if (!result.isEmpty()) {
-        ui->ResponseBody->appendPlainText(result);
-    }
 }
 
 
@@ -410,46 +316,6 @@ QNetworkCacheMetaData::RawHeaderList CRequestGUI::GetRequestHeaders() const
 }
 
 
-void CRequestGUI::LockRequest()
-{
-    ui->Run->setEnabled(false);
-    ui->RequestURL->setEnabled(false);
-    ui->RequestType->setEnabled(false);
-    ui->RequestBody->setEnabled(false);
-    ui->RequestHeaders->setEnabled(false);
-    ui->AddHeader->setEnabled(false);
-    ui->RemoveHeader->setEnabled(false);
-    ui->ClearHeaders->setEnabled(false);
-}
-
-
-void CRequestGUI::UnlockRequest()
-{
-    ui->Run->setEnabled(true);
-    ui->RequestURL->setEnabled(true);
-    ui->RequestType->setEnabled(true);
-    ui->RequestBody->setEnabled(true);
-    ui->RequestHeaders->setEnabled(true);
-    ui->AddHeader->setEnabled(true);
-    ui->RemoveHeader->setEnabled(true);
-	ui->ClearHeaders->setEnabled(true);
-}
-
-
-void CRequestGUI::ClearResult()
-{
-	ui->ResponsePreview->clear();
-    ui->ResponseBody->clear();
-	ui->ResponseHeaders->setRowCount(0);
-	ui->ResponseHeaders->setColumnCount(2);
-    ui->ResponseHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
-    ui->TimeLabel->clear();
-	ui->ResponseSizeLabel->clear();
-	ui->ResultTabs->setCurrentIndex(0);
-    ui->ReplyStack->setCurrentIndex(0);
-}
-
-
 void CRequestGUI::RebuildURL()
 {
 	ui->RequestURL->blockSignals(true); // Block signals to prevent infinite loop
@@ -488,73 +354,6 @@ void CRequestGUI::RebuildURL()
 }
 
 
-void CRequestGUI::DecodeReply(QNetworkReply* reply, const QByteArray& data)
-{
-    // Example implementation to decode the reply  
-    // You can customize this based on your application's requirements  
-
-    // Check the content type of the reply  
-    auto contentType = reply->header(QNetworkRequest::ContentTypeHeader).toString();
-
-    // images
-    if (contentType.contains("image/", Qt::CaseInsensitive)) {
-        QPixmap pm;
-        if (pm.loadFromData(data))
-        {
-            //ui->ResponceLabel->setPixmap(pm);
-            //ui->ReplyStack->setCurrentIndex(1);
-
-			ui->ResponsePreview->document()->addResource(QTextDocument::ImageResource, QUrl("image://pm"), pm);
-            ui->ResponsePreview->setHtml(QString("<img src='image://pm'/>"));
-        }
-        else
-        {
-            ui->ResponsePreview->setHtml(tr("<font color=red>Cannot decode image format</font>"));
-            ui->ReplyStack->setCurrentIndex(0);
-        }
-
-        /*
-        // save data to file
-        QTemporaryFile f("image.img");
-        f.open();
-        f.write(data);
-        QString name = f.fileName();
-        f.close();
-
-            // TEST
-		ui->ResponsePreview->setHtml(QString("<img src='file:///%1'/>").arg(name));
-			//ui->ResponsePreview->setSource(QUrl::fromLocalFile("file:///c:/Test/bubble-chains/gui/add_user.png"), QTextDocument::ImageResource); // Placeholder image
-        } else {
-            ui->ResponsePreview->setPlainText(tr("<Cannot decode image format>"));
-        }*/
-        return; // Exit early for image handling
-	}
-
-	// text, JSON, HTML...
-    ui->ReplyStack->setCurrentIndex(0);
-
-    if (contentType.contains("application/json", Qt::CaseInsensitive)) {
-        // If the content is JSON, parse it  
-        QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
-        if (!jsonDoc.isNull()) {
-            ui->ResponsePreview->setPlainText(jsonDoc.toJson(QJsonDocument::Indented));
-        }
-        else {
-            ui->ResponsePreview->setPlainText(tr("<Invalid JSON response>"));
-        }
-    }
-    else if (contentType.contains("text/html", Qt::CaseInsensitive)) {
-        // If the content is HTML, display it as is  
-        ui->ResponsePreview->setHtml(QString::fromUtf8(data));
-    }
-    else {
-        // For other content types, display as plain text  
-        ui->ResponsePreview->setPlainText(QString::fromUtf8(data));
-    }
-    
-}
-
-
 void CRequestGUI::on_Run_clicked()
 {
     LockRequest();
@@ -567,7 +366,7 @@ void CRequestGUI::on_Run_clicked()
     if (request.isEmpty()){
 		UnlockRequest();
         ui->ResultCode->setText(tr("ERROR"));
-        ui->ResponseBody->appendPlainText(tr("Request is empty"));
+        ui->ResponseText->appendPlainText(tr("Request is empty"));
         return;
     }
 
@@ -578,9 +377,246 @@ void CRequestGUI::on_Run_clicked()
     if (reply == nullptr) {
         UnlockRequest();
         ui->ResultCode->setText(tr("ERROR"));
-        ui->ResponseBody->appendPlainText(tr("Request could not be processed"));
+        ui->ResponseText->appendPlainText(tr("Request could not be processed"));
         return;
     }
 
     ui->ResultCode->setText(tr("IN PROGRESS..."));
 }
+
+
+// process responses
+
+void CRequestGUI::OnRequestDone()
+{
+    auto ms = m_timer.elapsed();
+
+    // if error happened, this will be handled in another slot
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+    if (reply->error() != QNetworkReply::NoError)
+        return;
+
+    reply->deleteLater(); // delete reply object after processing
+
+    UnlockRequest();
+
+    ui->ReplyDataType->show();
+    ui->ReplyDataInfo->show();
+
+    // update response time and size
+    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
+    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
+
+    // update status
+    auto errorCode = reply->error();
+    auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
+
+    auto statusText = tr("DONE. Code: %1").arg(statusCode);
+    if (statusCode == 200)
+        statusText += " [OK]";
+    else
+        if (statusReason.isEmpty() && reply->errorString().isEmpty()) {
+        }
+        else {
+            statusText += " [";
+            if (statusReason.size())
+                statusText += statusReason;
+            if (reply->errorString().size())
+                statusText += " " + reply->errorString();
+            statusText += "]";
+        }
+    ui->ResultCode->setText(statusText);
+
+
+    // update body
+    m_replyData = reply->readAll();
+    DecodeReply(reply, m_replyData);
+
+
+    // update headers
+    const auto& headers = reply->rawHeaderPairs();
+    ui->ResponseHeaders->setRowCount(headers.size());
+
+    int r = 0;
+    for (const auto& header : headers) {
+        auto& key = header.first;
+        auto& value = header.second;
+        ui->ResponseHeaders->setItem(r, 0, new QTableWidgetItem(key));
+        ui->ResponseHeaders->setItem(r, 1, new QTableWidgetItem(value));
+        r++;
+    }
+}
+
+
+void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
+{
+    auto ms = m_timer.elapsed();
+    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
+
+    UnlockRequest();
+
+    ui->ReplyDataType->hide();
+    ui->ReplyDataInfo->hide();
+
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+    reply->deleteLater(); // delete reply object after processing
+
+    // update response size
+    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
+
+    // update status
+    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
+
+    QString statusText = tr("FAILED. Code: %1").arg((int)code);
+    if (statusReason.size())
+        statusText += tr(" [%1]").arg(statusReason);
+
+    ui->ResultCode->setText(statusText);
+
+    auto errorText = reply->errorString();
+    if (!errorText.isEmpty()) {
+        ShowPlainText(errorText);
+    }
+
+    auto result = reply->readAll();
+    if (!result.isEmpty()) {
+        ShowPlainText(result);
+    }
+}
+
+
+void CRequestGUI::LockRequest()
+{
+    ui->Run->setEnabled(false);
+    ui->RequestURL->setEnabled(false);
+    ui->RequestType->setEnabled(false);
+    ui->RequestBody->setEnabled(false);
+    ui->RequestHeaders->setEnabled(false);
+    ui->AddHeader->setEnabled(false);
+    ui->RemoveHeader->setEnabled(false);
+    ui->ClearHeaders->setEnabled(false);
+    ui->ReplyDataType->setEnabled(false);
+}
+
+
+void CRequestGUI::UnlockRequest()
+{
+    ui->Run->setEnabled(true);
+    ui->RequestURL->setEnabled(true);
+    ui->RequestType->setEnabled(true);
+    ui->RequestBody->setEnabled(true);
+    ui->RequestHeaders->setEnabled(true);
+    ui->AddHeader->setEnabled(true);
+    ui->RemoveHeader->setEnabled(true);
+    ui->ClearHeaders->setEnabled(true);
+    ui->ReplyDataType->setEnabled(true);
+}
+
+
+void CRequestGUI::ClearResult()
+{
+    ui->ResponsePreview->clear();
+    ui->ResponseText->clear();
+    ui->ResponseHeaders->setRowCount(0);
+    ui->ResponseHeaders->setColumnCount(2);
+    ui->ResponseHeaders->setHorizontalHeaderLabels({ tr("Name"), tr("Value") });
+    ui->TimeLabel->clear();
+    ui->ResponseSizeLabel->clear();
+    ui->ResultTabs->setCurrentIndex(0);
+    ui->ReplyStack->setCurrentIndex(2);
+}
+
+
+void CRequestGUI::DecodeReply(QNetworkReply* reply, const QByteArray& data)
+{
+    // Check the content type of the reply  
+    auto contentType = reply->header(QNetworkRequest::ContentTypeHeader).toString();
+
+    // images
+    if (contentType.contains("image/", Qt::CaseInsensitive)) {
+        bool ok = ShowReplyContent(DT_IMAGE, data, contentType);
+    }
+    // text, JSON, HTML...
+    else if (contentType.contains("application/json", Qt::CaseInsensitive)) {
+        ShowReplyContent(DT_JSON, data, contentType);
+    }
+    else if (contentType.contains("text/html", Qt::CaseInsensitive)) {
+        ShowReplyContent(DT_HTML, data, contentType);
+    }
+    else if (contentType.contains("text/plain", Qt::CaseInsensitive)) {
+        ShowReplyContent(DT_PLAIN, data, contentType);
+    }
+    else {
+        // For other content types, display as binary data
+        ShowReplyContent(DT_HEX, data, contentType);
+    }
+}
+
+
+void CRequestGUI::ShowPlainText(const QString& text)
+{
+	ui->ReplyDataInfo->clear();
+    ui->ResponseText->appendPlainText(text);
+    ui->ReplyStack->setCurrentIndex(2);
+}
+
+
+bool CRequestGUI::ShowReplyContent(ReplyDisplayType showType, const QByteArray& data, const QString& contentType)
+{
+    int cbIndex = (int)showType;
+    ui->ReplyDataType->setCurrentIndex(cbIndex);
+
+    switch (showType)
+    {
+    case DT_IMAGE:
+    {
+        ui->ReplyStack->setCurrentIndex(0);
+
+        QImage pm;
+        if (pm.loadFromData(data))
+        {
+            QBuffer buffer(&m_replyData);
+            buffer.open(QIODevice::ReadOnly);
+            QImageReader reader(&buffer);
+            QString format = reader.format().toUpper();
+
+            ui->ResponsePreview->document()->addResource(QTextDocument::ImageResource, QUrl("image://pm"), pm);
+            ui->ResponsePreview->setHtml(QString("<img src='image://pm'/>"));
+			ui->ReplyDataInfo->setText(QString("   %3   %1x%2").arg(pm.width()).arg(pm.height()).arg(format));
+        }
+        else
+        {
+			ui->ReplyDataInfo->clear();
+            ui->ResponsePreview->setHtml(tr("<font color=red>Cannot decode image format</font>"));
+            return false;
+        }
+    }
+    break;
+
+    case DT_HEX:
+        break;
+
+    case DT_HTML:
+        ShowPlainText(QString::fromUtf8(data));
+        break;
+
+    case DT_JSON:
+        ShowPlainText(QString::fromUtf8(data));
+        break;
+
+    default:    // plain text
+        ShowPlainText(QString::fromUtf8(data));
+        break;
+    }
+
+    return true;
+}
+
+
+void CRequestGUI::on_ReplyDataType_currentIndexChanged(int index)
+{
+	ShowReplyContent((ReplyDisplayType)index, m_replyData);
+}
+
+

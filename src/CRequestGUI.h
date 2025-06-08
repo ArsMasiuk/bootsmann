@@ -31,7 +31,7 @@ Q_SIGNALS:
     void RequestTitleChanged(const QString& title);
 
 public Q_SLOTS:
-    void OnRequestSuccess();
+    void OnRequestDone();
 	void OnRequestError(QNetworkReply::NetworkError code);
 
 private Q_SLOTS:
@@ -49,6 +49,8 @@ private Q_SLOTS:
 
 	void on_RequestParams_cellChanged(int row, int column);
 
+	void on_ReplyDataType_currentIndexChanged(int index);
+
 private:
     void SetDefaultHeaders();
 	void AddRequestHeader(const QString& name, const QString& value);
@@ -63,10 +65,22 @@ private:
 
 	void DecodeReply(QNetworkReply* reply, const QByteArray& data);
 
+    enum ReplyDisplayType {
+        DT_PLAIN,
+        DT_HTML,
+        DT_JSON,
+        DT_IMAGE,
+        DT_HEX
+    };
+    bool ShowReplyContent(ReplyDisplayType showType, const QByteArray& data, const QString& contentType = "");
+    void ShowPlainText(const QString& text);
+
     Ui::CRequestGUI *ui;
 
     CRequestManager& m_reqMgr;
 	QElapsedTimer m_timer;
+
+	QByteArray m_replyData;
 };
 
 #endif // CREQUESTGUI_H

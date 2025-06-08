@@ -12,6 +12,11 @@ HEADERS += $$files(*.h)
 FORMS += $$files(*.ui)
 RESOURCES += $$files(*.qrc)
 
+# QHexView
+HEADERS += $$PWD/QHexView/include/QHexView.h
+SOURCES += $$PWD/QHexView/src/QHexView.cpp
+INCLUDEPATH += $$PWD/QHexView/include
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin

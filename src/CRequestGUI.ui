@@ -402,74 +402,136 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
-            <widget class="QStackedWidget" name="ReplyStack">
-             <widget class="QWidget" name="TextPage">
-              <layout class="QVBoxLayout" name="verticalLayout_10">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
+            <layout class="QVBoxLayout" name="verticalLayout_10">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
                <item>
-                <widget class="QTextBrowser" name="ResponsePreview">
-                 <property name="toolTip">
-                  <string>Decoded responce</string>
-                 </property>
+                <widget class="QComboBox" name="ReplyDataType">
+                 <item>
+                  <property name="text">
+                   <string>Plain</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>HTML</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>JSON</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Image</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Binary</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
-              </layout>
-             </widget>
-             <widget class="QWidget" name="LabelPage">
-              <layout class="QVBoxLayout" name="verticalLayout_11">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
                <item>
-                <widget class="QLabel" name="ResponceLabel">
+                <widget class="QLabel" name="ReplyDataInfo">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="text">
                   <string>&lt;...&gt;</string>
                  </property>
-                 <property name="scaledContents">
-                  <bool>true</bool>
-                 </property>
                 </widget>
                </item>
               </layout>
-             </widget>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="RawResponceTab">
-          <attribute name="title">
-           <string>Raw Data</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_9">
-           <item>
-            <widget class="QPlainTextEdit" name="ResponseBody">
-             <property name="toolTip">
-              <string>Data received (raw)</string>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
+             </item>
+             <item>
+              <widget class="QStackedWidget" name="ReplyStack">
+               <property name="currentIndex">
+                <number>2</number>
+               </property>
+               <widget class="QWidget" name="BrowserPage">
+                <layout class="QVBoxLayout" name="verticalLayout_11">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QTextBrowser" name="ResponsePreview">
+                   <property name="toolTip">
+                    <string>Decoded responce</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="LabelPage">
+                <layout class="QVBoxLayout" name="verticalLayout_12">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="ResponceLabel">
+                   <property name="text">
+                    <string>&lt;...&gt;</string>
+                   </property>
+                   <property name="scaledContents">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="TextPage">
+                <layout class="QVBoxLayout" name="verticalLayout_13">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QPlainTextEdit" name="ResponseText">
+                   <property name="toolTip">
+                    <string>Data received (raw)</string>
+                   </property>
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
