@@ -7,6 +7,8 @@
 #include <QElapsedTimer>
 #include <QSettings>
 
+#include <QHexView.h>
+
 namespace Ui {
 class CRequestGUI;
 }
@@ -81,6 +83,7 @@ private:
 	QElapsedTimer m_timer;
 
 	QByteArray m_replyData;
+    QHexView* m_hexView = nullptr;
 };
 
 #endif // CREQUESTGUI_H

@@ -595,6 +595,16 @@ bool CRequestGUI::ShowReplyContent(ReplyDisplayType showType, const QByteArray& 
     break;
 
     case DT_HEX:
+    {
+        if (!m_hexView) {
+            m_hexView = new QHexView();
+            ui->ReplyStack->addWidget(m_hexView);
+        }
+
+        ui->ReplyStack->setCurrentWidget(m_hexView);
+
+        m_hexView->setData(new QHexView::DataStorageArray(m_replyData));
+    }
         break;
 
     case DT_HTML:
