@@ -17,6 +17,10 @@ HEADERS += $$PWD/QHexView/include/QHexView.h
 SOURCES += $$PWD/QHexView/src/QHexView.cpp
 INCLUDEPATH += $$PWD/QHexView/include
 
+# QSourceHighlite
+include($$PWD/QSourceHighlite/QSourceHighlite.pri)
+INCLUDEPATH += $$PWD/QSourceHighlite
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin

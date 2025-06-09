@@ -24,12 +24,18 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
     ui->RequestTabs->setCurrentIndex(0);
 
 	ui->ResponseHeaders->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+
+    m_requestHL = new QSourceHighlite::QSourceHighliter(nullptr);
+    m_replyHL = new QSourceHighlite::QSourceHighliter(nullptr);
 }
 
 
 CRequestGUI::~CRequestGUI()
 {
     delete ui;
+
+    delete m_requestHL;
+    delete m_replyHL;
 }
 
 
@@ -280,6 +286,40 @@ void CRequestGUI::on_RequestParams_cellChanged(int /*row*/, int /*column*/)
 }
 
 
+void CRequestGUI::on_RequestDataType_currentIndexChanged(int index)
+{
+    switch (index)
+    {
+    case DT_PLAIN:
+        m_requestHL->setDocument(nullptr);
+        AddRequestHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+	    break;
+
+    case DT_JSON:
+		m_requestHL->setDocument(ui->RequestBody->document());
+        m_requestHL->setCurrentLanguage(QSourceHighlite::QSourceHighliter::CodeJSON);
+        AddRequestHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        break;
+
+    case DT_HTML:
+        m_requestHL->setDocument(ui->RequestBody->document());
+        m_requestHL->setCurrentLanguage(QSourceHighlite::QSourceHighliter::CodeXML);
+        AddRequestHeader(QNetworkRequest::ContentTypeHeader, "text/html");
+        break;
+
+    default:
+        m_requestHL->setDocument(nullptr);
+        AddRequestHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
+        break;
+    }
+}
+
+
+void CRequestGUI::on_LoadRequestBody_clicked()
+{
+}
+
+
 void CRequestGUI::SetDefaultHeaders()
 {
     AddRequestHeader(QNetworkRequest::UserAgentHeader, qApp->applicationName() + " " + qApp->applicationVersion());
@@ -296,6 +336,18 @@ void CRequestGUI::AddRequestHeader(const QString& name, const QString& value)
 void CRequestGUI::AddRequestHeader(QNetworkRequest::KnownHeaders type, const QString& value)
 {
     AddRequestHeader(CRequestManager::GetKnownHeader(type), value);
+}
+
+
+void CRequestGUI::RemoveRequestHeader(const QString& name)
+{
+    ui->RequestHeaders->DeleteActiveRows(name);
+}
+
+
+void CRequestGUI::RemoveRequestHeader(QNetworkRequest::KnownHeaders type)
+{
+    RemoveRequestHeader(CRequestManager::GetKnownHeader(type));
 }
 
 
@@ -390,9 +442,26 @@ void CRequestGUI::on_Run_clicked()
 void CRequestGUI::OnRequestDone()
 {
     auto ms = m_timer.elapsed();
+    auto reply = qobject_cast<QNetworkReply*>(sender());
+
+    // update response time and size
+    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
+    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
+
+    // update headers
+    const auto& headers = reply->rawHeaderPairs();
+    ui->ResponseHeaders->setRowCount(headers.size());
+
+    int r = 0;
+    for (const auto& header : headers) {
+        auto& key = header.first;
+        auto& value = header.second;
+        ui->ResponseHeaders->setItem(r, 0, new QTableWidgetItem(key));
+        ui->ResponseHeaders->setItem(r, 1, new QTableWidgetItem(value));
+        r++;
+    }
 
     // if error happened, this will be handled in another slot
-    auto reply = qobject_cast<QNetworkReply*>(sender());
     if (reply->error() != QNetworkReply::NoError)
         return;
 
@@ -403,16 +472,12 @@ void CRequestGUI::OnRequestDone()
     ui->ReplyDataType->show();
     ui->ReplyDataInfo->show();
 
-    // update response time and size
-    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
-    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
-
     // update status
     auto errorCode = reply->error();
     auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
-    auto statusText = tr("DONE. Code: %1").arg(statusCode);
+    auto statusText = tr("DONE: %1").arg(statusCode);
     if (statusCode == 200)
         statusText += " [OK]";
     else
@@ -428,24 +493,9 @@ void CRequestGUI::OnRequestDone()
         }
     ui->ResultCode->setText(statusText);
 
-
     // update body
     m_replyData = reply->readAll();
     DecodeReply(reply, m_replyData);
-
-
-    // update headers
-    const auto& headers = reply->rawHeaderPairs();
-    ui->ResponseHeaders->setRowCount(headers.size());
-
-    int r = 0;
-    for (const auto& header : headers) {
-        auto& key = header.first;
-        auto& value = header.second;
-        ui->ResponseHeaders->setItem(r, 0, new QTableWidgetItem(key));
-        ui->ResponseHeaders->setItem(r, 1, new QTableWidgetItem(value));
-        r++;
-    }
 }
 
 
@@ -468,7 +518,7 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
     // update status
     auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
-    QString statusText = tr("FAILED. Code: %1").arg((int)code);
+    QString statusText = tr("FAILED: %1").arg((int)code);
     if (statusReason.size())
         statusText += tr(" [%1]").arg(statusReason);
 
@@ -476,12 +526,12 @@ void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 
     auto errorText = reply->errorString();
     if (!errorText.isEmpty()) {
-        ShowPlainText(errorText);
+        ShowPlainText(errorText, true);
     }
 
     auto result = reply->readAll();
     if (!result.isEmpty()) {
-        ShowPlainText(result);
+        ShowPlainText(result, true);
     }
 }
 
@@ -525,6 +575,7 @@ void CRequestGUI::ClearResult()
     ui->ResponseSizeLabel->clear();
     ui->ResultTabs->setCurrentIndex(0);
     ui->ReplyStack->setCurrentIndex(2);
+    m_replyHL->setDocument(nullptr);
 }
 
 
@@ -554,10 +605,15 @@ void CRequestGUI::DecodeReply(QNetworkReply* reply, const QByteArray& data)
 }
 
 
-void CRequestGUI::ShowPlainText(const QString& text)
+void CRequestGUI::ShowPlainText(const QString& text, bool append)
 {
 	ui->ReplyDataInfo->clear();
-    ui->ResponseText->appendPlainText(text);
+
+    if (append)
+        ui->ResponseText->appendPlainText(text);
+    else
+        ui->ResponseText->setPlainText(text);
+    
     ui->ReplyStack->setCurrentIndex(2);
 }
 
@@ -597,7 +653,7 @@ bool CRequestGUI::ShowReplyContent(ReplyDisplayType showType, const QByteArray& 
     case DT_HEX:
     {
         if (!m_hexView) {
-            m_hexView = new QHexView();
+            m_hexView = new QHexView(ui->ReplyStack);
             ui->ReplyStack->addWidget(m_hexView);
         }
 
@@ -608,15 +664,20 @@ bool CRequestGUI::ShowReplyContent(ReplyDisplayType showType, const QByteArray& 
         break;
 
     case DT_HTML:
-        ShowPlainText(QString::fromUtf8(data));
+        m_replyHL->setDocument(ui->ResponseText->document());
+        m_replyHL->setCurrentLanguage(QSourceHighlite::QSourceHighliter::CodeXML);
+        ShowPlainText(QString::fromUtf8(data), false);
         break;
 
     case DT_JSON:
-        ShowPlainText(QString::fromUtf8(data));
+        m_replyHL->setDocument(ui->ResponseText->document());
+        m_replyHL->setCurrentLanguage(QSourceHighlite::QSourceHighliter::CodeJSON);
+        ShowPlainText(QString::fromUtf8(data), false);
         break;
 
     default:    // plain text
-        ShowPlainText(QString::fromUtf8(data));
+        m_replyHL->setDocument(nullptr);
+        ShowPlainText(QString::fromUtf8(data), false);
         break;
     }
 

@@ -8,6 +8,8 @@
 #include <QSettings>
 
 #include <QHexView.h>
+#include <QSourceHighliter.h>
+
 
 namespace Ui {
 class CRequestGUI;
@@ -48,8 +50,9 @@ private Q_SLOTS:
 	void on_ClearParameters_clicked();
 
     void on_RequestURL_editingFinished();
-
 	void on_RequestParams_cellChanged(int row, int column);
+	void on_RequestDataType_currentIndexChanged(int index);
+	void on_LoadRequestBody_clicked();
 
 	void on_ReplyDataType_currentIndexChanged(int index);
 
@@ -57,6 +60,8 @@ private:
     void SetDefaultHeaders();
 	void AddRequestHeader(const QString& name, const QString& value);
 	void AddRequestHeader(QNetworkRequest::KnownHeaders type, const QString& value);
+	void RemoveRequestHeader(const QString& name);
+	void RemoveRequestHeader(QNetworkRequest::KnownHeaders type);
     QNetworkCacheMetaData::RawHeaderList GetRequestHeaders() const;
 
     void LockRequest();
@@ -75,7 +80,7 @@ private:
         DT_HEX
     };
     bool ShowReplyContent(ReplyDisplayType showType, const QByteArray& data, const QString& contentType = "");
-    void ShowPlainText(const QString& text);
+    void ShowPlainText(const QString& text, bool append);
 
     Ui::CRequestGUI *ui;
 
@@ -83,7 +88,10 @@ private:
 	QElapsedTimer m_timer;
 
 	QByteArray m_replyData;
-    QHexView* m_hexView = nullptr;
+    QHexView *m_hexView = nullptr;
+
+    QSourceHighlite::QSourceHighliter* m_requestHL = nullptr;
+    QSourceHighlite::QSourceHighliter* m_replyHL = nullptr;
 };
 
 #endif // CREQUESTGUI_H

@@ -139,6 +139,60 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_7">
            <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <item>
+              <widget class="QComboBox" name="RequestDataType">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Plain</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>HTML</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>JSON</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Binary</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="LoadRequestBody">
+               <property name="text">
+                <string>Load...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <widget class="QPlainTextEdit" name="RequestBody">
              <property name="readOnly">
               <bool>false</bool>
@@ -407,6 +461,12 @@
               <layout class="QHBoxLayout" name="horizontalLayout_6">
                <item>
                 <widget class="QComboBox" name="ReplyDataType">
+                 <property name="minimumSize">
+                  <size>
+                   <width>100</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <item>
                   <property name="text">
                    <string>Plain</string>

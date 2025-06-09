@@ -18,6 +18,7 @@ public:
 	bool DeleteCurrentRow();
 	int DeleteActiveRows();
 	int DeleteInactiveRows();
+	int DeleteActiveRows(const QString& name);
 
 	bool IsActive(int row) const;
 	bool SetActive(int row, bool on);

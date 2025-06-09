@@ -118,6 +118,22 @@ int CParamTable::DeleteInactiveRows()
 }
 
 
+int CParamTable::DeleteActiveRows(const QString& name)
+{
+	int count = 0;
+	for (int i = 0; i < rowCount(); ++i) {
+		QTableWidgetItem* item = this->item(i, 2);
+		if (item->checkState() == Qt::Checked && this->item(i, 0)->text() == name) {
+			removeRow(i);
+			i--;
+			count++;
+		}
+	}
+
+	return count;
+}
+
+
 bool CParamTable::IsActive(int row) const
 {
 	if (row < 0 || row >= rowCount())
