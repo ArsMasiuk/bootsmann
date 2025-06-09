@@ -8,6 +8,7 @@
 #include <QTemporaryFile>
 #include <QImageReader>
 #include <QBuffer>
+#include <QFileDialog>
 
 
 CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
@@ -22,6 +23,10 @@ CRequestGUI::CRequestGUI(CRequestManager& reqMgr, QWidget *parent)
 	SetDefaultHeaders();
 
     ui->RequestTabs->setCurrentIndex(0);
+    ui->RequestBinaryLabel->hide();
+    ui->RequestBody->show();
+
+    ui->AuthStack->setCurrentIndex(0); // No authentication by default
 
 	ui->ResponseHeaders->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
@@ -288,6 +293,9 @@ void CRequestGUI::on_RequestParams_cellChanged(int /*row*/, int /*column*/)
 
 void CRequestGUI::on_RequestDataType_currentIndexChanged(int index)
 {
+    ui->RequestBinaryLabel->hide();
+    ui->RequestBody->show();
+
     switch (index)
     {
     case DT_PLAIN:
@@ -308,6 +316,8 @@ void CRequestGUI::on_RequestDataType_currentIndexChanged(int index)
         break;
 
     default:
+        ui->RequestBinaryLabel->show();
+        ui->RequestBody->hide();
         m_requestHL->setDocument(nullptr);
         AddRequestHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
         break;
@@ -317,6 +327,39 @@ void CRequestGUI::on_RequestDataType_currentIndexChanged(int index)
 
 void CRequestGUI::on_LoadRequestBody_clicked()
 {
+	QString filter = tr("All files (*)");
+
+    switch (ui->RequestType->currentIndex())
+    {
+    case DT_PLAIN:
+        filter = tr("Text files (*.txt);;All files (*)");
+		break;
+    case DT_JSON:
+        filter = tr("JSON files (*.json);;All files (*)");
+		break;
+    case DT_HTML:
+		filter = tr("HTML files (*.html);;All files (*)");
+    default:
+        break;
+    }
+
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Data to upload"), "", filter);
+    if (filePath.isEmpty())
+        return;
+
+    ui->RequestBinaryLabel->setText(tr("Binary data will be uploaded from %1").arg(filePath));
+
+    if (ui->RequestType->currentIndex() >= DT_IMAGE) {
+    }
+    else {
+		QFile file(filePath);
+        if (!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::warning(this, tr("Error"), tr("Could not open file: %1").arg(file.errorString()));
+            return;
+		}
+		auto content = file.readAll(); // Read the file content
+		ui->RequestBody->setPlainText(QString::fromUtf8(content));
+    }
 }
 
 

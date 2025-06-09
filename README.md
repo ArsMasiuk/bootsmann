@@ -1,5 +1,6 @@
 # Bootsmann
-A minimalistic, lean and fast REST API test application (opensource C++ alternative to Postman/Insomnia/Hoppscotch etc.)
+A minimalistic, lean and fast HTTP REST API test application (opensource C++ alternative to Postman/Insomnia/Hoppscotch etc.).
+It is especially useful for embedded devices and local development, where low memory usage and fast response times are crucial.
 
 ![image](https://github.com/user-attachments/assets/a1f042e7-9da4-4321-bbbe-0adbba0fafdd)
 
@@ -11,15 +12,15 @@ A minimalistic, lean and fast REST API test application (opensource C++ alternat
 - **Secure**: Does not upload any user data or API keys, ensuring privacy and security. No registration or login required.
 - **Portable**: Can be run directly from the executable without installation, making it portable and easier to use.
 - **Multiplatform**: Runs on various operating systems including Windows, macOS, and Linux - thanks to Qt framework.
-- **Intuitive**: Provides a simple (but functional) graphical user interface for testing RESTful APIs.
+- **Intuitive**: Provides a simple (but functional) graphical user interface.
 - **Open source**: Available under the MIT License, allowing for free use, modification, and distribution.
 
 ## Measurements
 
-| Average values            | Postman & Insomnia | Bootsmann
-| --------      | -------          |-------
-| Memory usage  | 400-500 MB           | 20-40 MB
-| Responce timings  | 150 ms           | 80 ms
+| Average values            | Postman & Insomnia    | Hoppscotch	| Bootsmann
+| --------------------------| --------------------- |-----------	|--------------- 
+| Memory usage				| 400-500 MB			| 60-70 MB		| 20-40 MB
+| Responce timings			| 120-150 ms			| 100-110 ms	| 70-80 ms
 
 (Measurements are done on the same hardware and OS, running the same REST API requests. Values are averages of 10 runs.)
 
