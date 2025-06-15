@@ -20,6 +20,13 @@ public:
         const QByteArray& payload = "", 
         QNetworkCacheMetaData::RawHeaderList headers = {});
 
+    QNetworkReply* UploadRequest(
+        QObject* handler,
+        const QByteArray& verb,
+        const QUrl& url,
+        QIODevice& dataSource,
+        QNetworkCacheMetaData::RawHeaderList headers = {});
+
 	static const QByteArrayList& GetKnownHeaders() { return s_knownHeaders; }
     static const QByteArray GetKnownHeader(QNetworkRequest::KnownHeaders type);
 

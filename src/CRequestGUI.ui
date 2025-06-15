@@ -123,6 +123,10 @@
             <property name="text">
              <string>Run</string>
             </property>
+            <property name="icon">
+             <iconset resource="Bootsmann.qrc">
+              <normaloff>:/Icons/Run</normaloff>:/Icons/Run</iconset>
+            </property>
            </widget>
           </item>
          </layout>
@@ -131,7 +135,7 @@
        <item>
         <widget class="QTabWidget" name="RequestTabs">
          <property name="currentIndex">
-          <number>0</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="RequestBodyTab">
           <attribute name="title">
@@ -196,6 +200,15 @@
             <widget class="QLabel" name="RequestBinaryLabel">
              <property name="text">
               <string>&lt;...&gt;</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
              </property>
             </widget>
            </item>
@@ -263,6 +276,10 @@
               <widget class="QPushButton" name="AddParameter">
                <property name="text">
                 <string>Add</string>
+               </property>
+               <property name="icon">
+                <iconset resource="Bootsmann.qrc">
+                 <normaloff>:/Icons/Add</normaloff>:/Icons/Add</iconset>
                </property>
               </widget>
              </item>
@@ -337,6 +354,10 @@
                <property name="text">
                 <string>Add</string>
                </property>
+               <property name="icon">
+                <iconset resource="Bootsmann.qrc">
+                 <normaloff>:/Icons/Add</normaloff>:/Icons/Add</iconset>
+               </property>
               </widget>
              </item>
              <item>
@@ -386,7 +407,7 @@
                </item>
                <item>
                 <property name="text">
-                 <string>Explicit</string>
+                 <string>Open</string>
                 </property>
                </item>
               </widget>
@@ -408,6 +429,9 @@
            </item>
            <item>
             <widget class="QStackedWidget" name="AuthStack">
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
              <widget class="QWidget" name="NoAuth"/>
              <widget class="QWidget" name="LoginPassAuth">
               <layout class="QFormLayout" name="formLayout">
@@ -592,6 +616,12 @@
                  <property name="text">
                   <string>&lt;...&gt;</string>
                  </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                 <property name="textInteractionFlags">
+                  <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -727,6 +757,25 @@
          </widget>
         </widget>
        </item>
+       <item>
+        <widget class="QLabel" name="ServerErrorText">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>&lt;...&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>
@@ -745,7 +794,6 @@
   <tabstop>RequestURL</tabstop>
   <tabstop>Run</tabstop>
   <tabstop>RequestTabs</tabstop>
-  <tabstop>ResultTabs</tabstop>
   <tabstop>RequestHeaders</tabstop>
   <tabstop>AddHeader</tabstop>
   <tabstop>RemoveHeader</tabstop>
@@ -753,7 +801,9 @@
   <tabstop>ResponseHeaders</tabstop>
   <tabstop>RequestBody</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="Bootsmann.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>RequestURL</sender>

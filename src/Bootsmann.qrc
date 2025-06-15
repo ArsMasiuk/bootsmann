@@ -2,5 +2,8 @@
   <qresource prefix="/Icons">
     <file alias="HTTP">./Icons/HTTP_logo.svg</file>
     <file alias="CPP">./Icons/CPP_logo.svg</file>
+	  
+    <file alias="Add">./Icons/Add.png</file>
+    <file alias="Run">./Icons/Run.png</file>
   </qresource>
 </RCC>

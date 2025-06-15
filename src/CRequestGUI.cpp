@@ -59,6 +59,9 @@ bool CRequestGUI::Store(QSettings& settings) const
     settings.setValue("RequestURL", ui->RequestURL->text());
     settings.setValue("RequestType", ui->RequestType->currentText());
     settings.setValue("RequestBody", ui->RequestBody->toPlainText());
+
+	settings.setValue("RequestDataType", ui->RequestDataType->currentIndex());
+    settings.setValue("RequestFileNameToUpload", m_fileNameToUpload);
 	settings.endGroup();
 
     // Request headers
@@ -99,6 +102,9 @@ bool CRequestGUI::Restore(QSettings& settings)
 	QString verb = settings.value("RequestType", "GET").toString();
 	ui->RequestType->setCurrentText(verb);
 	ui->RequestBody->setPlainText(settings.value("RequestBody", "").toString());
+
+	ui->RequestDataType->setCurrentIndex(settings.value("RequestDataType", DT_PLAIN).toInt());
+	m_fileNameToUpload = settings.value("RequestFileNameToUpload", "").toString();
     settings.endGroup();
 
     // Request headers
@@ -329,7 +335,7 @@ void CRequestGUI::on_LoadRequestBody_clicked()
 {
 	QString filter = tr("All files (*)");
 
-    switch (ui->RequestType->currentIndex())
+    switch (ui->RequestDataType->currentIndex())
     {
     case DT_PLAIN:
         filter = tr("Text files (*.txt);;All files (*)");
@@ -347,9 +353,10 @@ void CRequestGUI::on_LoadRequestBody_clicked()
     if (filePath.isEmpty())
         return;
 
-    ui->RequestBinaryLabel->setText(tr("Binary data will be uploaded from %1").arg(filePath));
+    ui->RequestBinaryLabel->setText(tr("Binary data will be uploaded from:/n/n %1").arg(filePath));
+	m_fileNameToUpload = filePath;
 
-    if (ui->RequestType->currentIndex() >= DT_IMAGE) {
+    if (ui->RequestDataType->currentIndex() >= DT_IMAGE) {
     }
     else {
 		QFile file(filePath);
@@ -451,28 +458,48 @@ void CRequestGUI::RebuildURL()
 
 void CRequestGUI::on_Run_clicked()
 {
-    LockRequest();
     ClearResult();
 
     QString request = ui->RequestURL->text().trimmed();
     QString verb = ui->RequestType->currentText();
-    QString payload = ui->RequestBody->toPlainText();
 
     if (request.isEmpty()){
-		UnlockRequest();
         ui->ResultCode->setText(tr("ERROR"));
-        ui->ResponseText->appendPlainText(tr("Request is empty"));
+        ShowPlainText(tr("Request is empty"), false);
         return;
     }
 
-    auto reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload.toLocal8Bit(), GetRequestHeaders());
+	QNetworkReply* reply = nullptr;
+
+    if (ui->RequestDataType->currentIndex() >= DT_IMAGE) {
+        // If the request is an image or binary data, we need to upload a file
+        if (m_fileNameToUpload.isEmpty()) {
+            QMessageBox::warning(this, tr("No File Selected"), tr("Please select a file to upload."));
+            return;
+        }
+
+        m_fileToUpload.setFileName(m_fileNameToUpload);
+        if (!m_fileToUpload.open(QIODevice::ReadOnly)) {
+            QMessageBox::warning(this, tr("Error"), tr("Could not open file: %1").arg(m_fileToUpload.errorString()));
+            return;
+        }
+
+        reply = m_reqMgr.UploadRequest(this, verb.toLocal8Bit(), QUrl(request), m_fileToUpload, GetRequestHeaders());
+	}
+
+    if (!reply) {
+		auto payload = ui->RequestBody->toPlainText().toUtf8();
+        reply = m_reqMgr.SendRequest(this, verb.toLocal8Bit(), QUrl(request), payload, GetRequestHeaders());
+    }
+
+    LockRequest();
 
     m_timer.start();
 
     if (reply == nullptr) {
         UnlockRequest();
         ui->ResultCode->setText(tr("ERROR"));
-        ui->ResponseText->appendPlainText(tr("Request could not be processed"));
+        ShowPlainText(tr("Request could not be processed"), false);
         return;
     }
 
@@ -491,6 +518,13 @@ void CRequestGUI::OnRequestDone()
     ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
     ui->TimeLabel->setText(tr("%1 ms").arg(ms));
 
+    reply->deleteLater(); // delete reply object after processing
+
+    UnlockRequest();
+
+    ui->ReplyDataType->show();
+    ui->ReplyDataInfo->show();
+
     // update headers
     const auto& headers = reply->rawHeaderPairs();
     ui->ResponseHeaders->setRowCount(headers.size());
@@ -504,78 +538,45 @@ void CRequestGUI::OnRequestDone()
         r++;
     }
 
-    // if error happened, this will be handled in another slot
-    if (reply->error() != QNetworkReply::NoError)
-        return;
-
-    reply->deleteLater(); // delete reply object after processing
-
-    UnlockRequest();
-
-    ui->ReplyDataType->show();
-    ui->ReplyDataInfo->show();
-
-    // update status
-    auto errorCode = reply->error();
-    auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
-
-    auto statusText = tr("DONE: %1").arg(statusCode);
-    if (statusCode == 200)
-        statusText += " [OK]";
-    else
-        if (statusReason.isEmpty() && reply->errorString().isEmpty()) {
-        }
-        else {
-            statusText += " [";
-            if (statusReason.size())
-                statusText += statusReason;
-            if (reply->errorString().size())
-                statusText += " " + reply->errorString();
-            statusText += "]";
-        }
-    ui->ResultCode->setText(statusText);
-
     // update body
     m_replyData = reply->readAll();
     DecodeReply(reply, m_replyData);
+
+    // update status
+    auto errorCode = reply->error();
+	auto errorString = reply->errorString();
+    auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
+
+    // if error happened, this will be handled in another slot
+    QString statusText;
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        statusText = tr("DONE: %1").arg(statusCode);
+        if (statusCode == 200) {
+			// HTTP 200 OK
+            errorString = ""; // Clear status reason for 200 OK
+        }
+    }
+    else
+    {
+        statusText = tr("FAILED: %1").arg(errorCode);
+    }
+
+    if (!statusReason.isEmpty()) {
+        statusText += " [" + statusReason + "]";
+    }
+    ui->ResultCode->setText(statusText);
+
+    ui->ServerErrorText->setText(errorString);
+    ui->ServerErrorText->setVisible(!errorString.isEmpty());
 }
 
 
 void CRequestGUI::OnRequestError(QNetworkReply::NetworkError code)
 {
-    auto ms = m_timer.elapsed();
-    ui->TimeLabel->setText(tr("%1 ms").arg(ms));
-
-    UnlockRequest();
-
-    ui->ReplyDataType->hide();
-    ui->ReplyDataInfo->hide();
-
     auto reply = qobject_cast<QNetworkReply*>(sender());
-    reply->deleteLater(); // delete reply object after processing
-
-    // update response size
-    ui->ResponseSizeLabel->setText(tr("%1 bytes").arg(reply->bytesAvailable()));
-
-    // update status
-    auto statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
-
-    QString statusText = tr("FAILED: %1").arg((int)code);
-    if (statusReason.size())
-        statusText += tr(" [%1]").arg(statusReason);
-
-    ui->ResultCode->setText(statusText);
-
     auto errorText = reply->errorString();
-    if (!errorText.isEmpty()) {
-        ShowPlainText(errorText, true);
-    }
-
-    auto result = reply->readAll();
-    if (!result.isEmpty()) {
-        ShowPlainText(result, true);
-    }
 }
 
 
@@ -619,6 +620,8 @@ void CRequestGUI::ClearResult()
     ui->ResultTabs->setCurrentIndex(0);
     ui->ReplyStack->setCurrentIndex(2);
     m_replyHL->setDocument(nullptr);
+    ui->ServerErrorText->hide();
+    ui->ReplyDataInfo->clear();
 }
 
 
@@ -731,6 +734,20 @@ bool CRequestGUI::ShowReplyContent(ReplyDisplayType showType, const QByteArray& 
 void CRequestGUI::on_ReplyDataType_currentIndexChanged(int index)
 {
 	ShowReplyContent((ReplyDisplayType)index, m_replyData);
+}
+
+
+void CRequestGUI::on_AuthType_currentIndexChanged(int index)
+{
+    if (index == 0) {
+        ui->AuthStack->setCurrentIndex(0); // No authentication
+    } else if (index == 1) {
+        ui->AuthStack->setCurrentIndex(1); // Basic authentication
+    } else if (index == 2) {
+        ui->AuthStack->setCurrentIndex(2); // Bearer token authentication
+    } else {
+        ui->AuthStack->setCurrentIndex(3); // Custom authentication
+	}
 }
 
 

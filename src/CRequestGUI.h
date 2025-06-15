@@ -56,6 +56,8 @@ private Q_SLOTS:
 
 	void on_ReplyDataType_currentIndexChanged(int index);
 
+	void on_AuthType_currentIndexChanged(int index);
+
 private:
     void SetDefaultHeaders();
 	void AddRequestHeader(const QString& name, const QString& value);
@@ -92,6 +94,9 @@ private:
 
     QSourceHighlite::QSourceHighliter* m_requestHL = nullptr;
     QSourceHighlite::QSourceHighliter* m_replyHL = nullptr;
+
+	QString m_fileNameToUpload;
+	QFile m_fileToUpload;
 };
 
 #endif // CREQUESTGUI_H

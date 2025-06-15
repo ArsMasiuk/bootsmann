@@ -62,7 +62,7 @@
   <action name="actionNewRequest">
    <property name="icon">
     <iconset resource="Bootsmann.qrc">
-     <normaloff>:/Icons/HTTP</normaloff>:/Icons/HTTP</iconset>
+     <normaloff>:/Icons/Add</normaloff>:/Icons/Add</iconset>
    </property>
    <property name="text">
     <string>New Request...</string>
